@@ -31,18 +31,21 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-
-
+        // Initialize views first
         logoImageView = findViewById(R.id.logoImageView)
         dateButton = findViewById(R.id.dateButton)
         recordButton = findViewById(R.id.recordButton)
         recordingsList = findViewById(R.id.recordingsList)
 
-// Now it's safe to use dateButton
+        // Disable record button until date is picked
+        recordButton.isEnabled = false
+
+        // Date button click listener
         dateButton.setOnClickListener {
             showDatePicker()
         }
 
+        // Record button click listener
         recordButton.setOnClickListener {
             if (isRecording) {
                 stopRecording()
@@ -63,6 +66,7 @@ class MainActivity : AppCompatActivity() {
 
         val datePickerDialog = DatePickerDialog(this, { _, selectedYear, selectedMonth, selectedDay ->
             dateButton.text = "$selectedDay/${selectedMonth + 1}/$selectedYear"
+            // Enable record button after date is selected
             recordButton.isEnabled = true
         }, year, month, day)
 
@@ -80,26 +84,47 @@ class MainActivity : AppCompatActivity() {
 
     private fun startRecording() {
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO)
-            != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.RECORD_AUDIO), 0)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(android.Manifest.permission.RECORD_AUDIO),
+                0
+            )
             return
         }
 
         currentFilePath = "${externalCacheDir?.absolutePath}/recording_${System.currentTimeMillis()}.3gp"
 
-        mediaRecorder = MediaRecorder().apply {
-            setAudioSource(MediaRecorder.AudioSource.MIC)
-            setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
-            setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
-            setOutputFile(currentFilePath)
-            prepare()
-            start()
+        mediaRecorder = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            MediaRecorder.Builder(this)
+                .setAudioSource(MediaRecorder.AudioSource.MIC)
+                .setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
+                .setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
+                .setOutputFile(currentFilePath)
+                .build()
+        } else {
+            MediaRecorder().apply {
+                setAudioSource(MediaRecorder.AudioSource.MIC)
+                setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
+                setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
+                setOutputFile(currentFilePath)
+            }
+        }
+
+        try {
+            mediaRecorder?.prepare()
+            mediaRecorder?.start()
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
 
         isRecording = true
-        recordButton.isSelected = true                  // change to recording background
+        recordButton.isSelected = true
         recordButton.setImageResource(R.drawable.ic_stoprecord)
     }
+
+
 
     private fun stopRecording() {
         try {
@@ -107,21 +132,26 @@ class MainActivity : AppCompatActivity() {
                 stop()
                 release()
             }
+
+            val filePath = currentFilePath
+            val file = File(filePath)
+
+            if (file.exists() && file.length() > 0) {
+                recordings.add(filePath)
+                updateRecordingsList()
+            } else {
+                println("Recording failed or empty file: $filePath")
+            }
+
         } catch (e: Exception) {
             e.printStackTrace()
         } finally {
             mediaRecorder = null
             isRecording = false
-            recordButton.isSelected = false                 // back to default background
+            recordButton.isSelected = false
             recordButton.setImageResource(R.drawable.ic_mic)
-
-            val filePath = currentFilePath
-            recordings.add(filePath)
-            updateRecordingsList()
         }
     }
-
-
 
 
 
@@ -135,53 +165,89 @@ class MainActivity : AppCompatActivity() {
             }
 
             val textView = TextView(this).apply {
-                text = recording
+                text = File(recording).name   // show just filename
                 textSize = 14f
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             }
 
-            val playButton = ImageView(this).apply {
-                setImageResource(R.drawable.ic_play) // your play icon
+            // single play/pause button
+            val playPauseButton = ImageView(this).apply {
+                setImageResource(R.drawable.ic_play) // default
                 setPadding(16, 0, 16, 0)
-                setOnClickListener { playRecording(recording) }
-            }
-
-            val stopButton = ImageView(this).apply {
-                setImageResource(R.drawable.ic_stop) // your stop icon
-                setPadding(16, 0, 16, 0)
-                setOnClickListener { stopPlaying() }
+                setOnClickListener { togglePlayPause(recording, this) }
             }
 
             val deleteButton = ImageView(this).apply {
-                setImageResource(R.drawable.ic_delete) // your bin icon
+                setImageResource(R.drawable.ic_delete)
                 setPadding(16, 0, 16, 0)
-                setOnClickListener { deleteRecording(recording) }
+                setOnClickListener {
+                    if (mediaPlayer != null) stopPlaying()
+                    deleteRecording(recording)
+                }
             }
 
             row.addView(textView)
-            row.addView(playButton)
-            row.addView(stopButton)
+            row.addView(playPauseButton)
             row.addView(deleteButton)
 
             recordingsList.addView(row)
         }
     }
 
-
-
-    private fun playRecording(filePath: String) {
-        stopPlaying()
-        mediaPlayer = MediaPlayer().apply {
-            setDataSource(filePath)
-            prepare()
-            start()
+    private fun togglePlayPause(filePath: String, button: ImageView) {
+        if (mediaPlayer != null && mediaPlayer!!.isPlaying) {
+            // pause/stop current playback
+            stopPlaying()
+            button.setImageResource(R.drawable.ic_play)
+        } else {
+            // play new recording
+            playRecording(filePath, button)
         }
     }
 
+
+
+    private fun playRecording(filePath: String, button: ImageView) {
+        stopPlaying() // stop any previous playback
+
+        val file = File(filePath)
+        if (!file.exists() || file.length() == 0L) {
+            println("Cannot play. File missing or empty: $filePath")
+            return
+        }
+
+        mediaPlayer = MediaPlayer().apply {
+            setDataSource(filePath)
+
+            setOnPreparedListener {
+                start()
+                button.setImageResource(R.drawable.ic_pause) // change to pause icon
+            }
+
+            setOnCompletionListener {
+                stopPlaying()
+                button.setImageResource(R.drawable.ic_play) // reset to play
+            }
+
+            try {
+                prepareAsync()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+
+
     private fun stopPlaying() {
-        mediaPlayer?.release()
+        mediaPlayer?.apply {
+            if (isPlaying) stop()
+            release()
+        }
         mediaPlayer = null
     }
+
+
 
     private fun deleteRecording(filePath: String) {
         val file = File(filePath)
