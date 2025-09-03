@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">App_SayDay</string>
+    <string name="select_date">Select Date</string>
+    <string name="start_recording">Start Recording</string>
+</resources>
