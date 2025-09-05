@@ -1,11 +1,13 @@
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/bg_app"
     android:padding="16dp">
 
-    <!-- Tape image -->
+    <!-- Tape logo -->
     <ImageView
         android:id="@+id/tapeLogo"
         android:layout_width="0dp"
@@ -18,65 +20,108 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-
-    <!-- Date button OVER the tape -->
+    <!-- Date button over the tape -->
     <TextView
         android:id="@+id/dateButton"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:lines="3"
+        android:minLines="3"
+        android:maxLines="3"
+        android:singleLine="false"
+        android:ellipsize="none"
+        android:gravity="center"
         android:text="@string/pick_a_day"
         android:textColor="@color/highlight_text_color"
         android:background="@drawable/highlight_button"
         android:clickable="true"
         android:focusable="true"
         android:padding="8dp"
-
+        android:rotation="4"
+        android:fontFamily="@font/permanent_marker"
+        app:layout_constraintWidth_percent="0.20"
         app:layout_constraintTop_toTopOf="@id/tapeLogo"
         app:layout_constraintStart_toStartOf="@id/tapeLogo"
         app:layout_constraintEnd_toEndOf="@id/tapeLogo"
         app:layout_constraintBottom_toBottomOf="@id/tapeLogo"
         app:layout_constraintHorizontal_bias="0.15"
-        app:layout_constraintVertical_bias="0.29"/>
+        app:layout_constraintVertical_bias="0.28"/>
 
+    <!-- Day Title EditText with pencil -->
+    <EditText
+        android:id="@+id/dayTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:hint="@string/my_day"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:drawableEnd="@drawable/ic_pencil"
+        android:drawablePadding="4dp"
+        android:padding="8dp"
+        android:textColor="@android:color/black"
+        android:textSize="16sp"
+        android:inputType="textCapSentences"
+        android:fontFamily="@font/permanent_marker"
+        android:gravity="center_vertical"
+        app:layout_constraintStart_toStartOf="@id/dateButton"
+        app:layout_constraintTop_toTopOf="@id/dateButton"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintWidth_percent="0.40"/>
 
-    <!-- biases = % position inside the tapeLogo bounds -->
-    <!-- adjust 0.15 (X) and 0.25 (Y) until button fits perfectly into the calendar spot -->
-
-    <!-- Record button below -->
-
-    <!-- Recordings list below -->
+    <!-- Record Button -->
     <ImageButton
         android:id="@+id/recordButton"
-        android:layout_width="76dp"
-        android:layout_height="76dp"
+        android:layout_width="55dp"
+        android:layout_height="55dp"
+        android:layout_marginTop="22dp"
+        android:padding="12dp"
         android:background="@drawable/bg_circle_button_selector"
         android:contentDescription="@string/start_recording"
         android:enabled="false"
         android:scaleType="centerInside"
         android:src="@drawable/ic_mic"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintEnd_toEndOf="@id/tapeLogo"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.140"
+        app:layout_constraintTop_toBottomOf="@id/dayTitle"
         app:tint="@android:color/white" />
 
+    <!-- Recordings list below (portrait) -->
     <ScrollView
-
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+        android:id="@+id/recordingsScroll"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
         app:layout_constraintTop_toBottomOf="@id/recordButton"
-        app:layout_constraintVertical_bias="0.180">
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHeight_default="percent"
+        app:layout_constraintHeight_percent="0.40">
 
         <LinearLayout
             android:id="@+id/recordingsList"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="8dp" />
+            android:padding="8dp"/>
     </ScrollView>
+
+    <!-- Calendar Picker Container with MaterialCalendarView -->
+    <LinearLayout
+        android:id="@+id/calendarContainer"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"
+        android:background="#FFFFFF"
+        app:layout_constraintTop_toBottomOf="@id/dateButton"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <com.prolificinteractive.materialcalendarview.MaterialCalendarView
+            android:id="@+id/materialCalendarView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+    </LinearLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>
