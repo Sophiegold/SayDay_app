@@ -1,0 +1,17 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Pencil body -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M3,21v-3.75l11-11 3.75,3.75-11,11H3z"/>
+
+    <!-- Pencil tip -->
+    <path
+        android:fillColor="#FFC107"
+        android:pathData="M14.5,6.5l3,3L19,6l-3-3-1.5,1.5z"/>
+</vector>
+

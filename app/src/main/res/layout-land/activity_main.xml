@@ -1,0 +1,128 @@
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_app"
+    android:padding="16dp">
+
+    <!-- Tape logo -->
+    <ImageView
+        android:id="@+id/tapeLogo"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:adjustViewBounds="true"
+        android:contentDescription="@string/logo"
+        android:scaleType="fitCenter"
+        android:src="@drawable/my_logo"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/recordingsScroll"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintWidth_percent="0.60" />
+
+    <!-- Date Button -->
+    <TextView
+        android:id="@+id/dateButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="@string/pick_a_day"
+        android:textColor="@color/highlight_text_color"
+        android:background="@drawable/highlight_button"
+        android:clickable="true"
+        android:focusable="true"
+        android:padding="8dp"
+        android:rotation="4"
+        android:lines="3"
+        android:minLines="3"
+        android:maxLines="3"
+        android:fontFamily="@font/permanent_marker"
+        android:textSize="18sp"
+        app:layout_constraintWidth_percent="0.13"
+        app:layout_constraintTop_toTopOf="@id/tapeLogo"
+        app:layout_constraintStart_toStartOf="@id/tapeLogo"
+        app:layout_constraintEnd_toEndOf="@id/dayTitle"
+        app:layout_constraintBottom_toBottomOf="@id/tapeLogo"
+        app:layout_constraintHorizontal_bias="0.18"
+        app:layout_constraintVertical_bias="0.29"/>
+
+    <!-- Day Title EditText -->
+    <EditText
+        android:id="@+id/dayTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:hint="@string/my_day"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:drawableEnd="@drawable/ic_pencil"
+        android:drawablePadding="4dp"
+        android:padding="8dp"
+        android:textColor="@android:color/black"
+        android:textSize="18sp"
+        android:inputType="textCapSentences"
+        android:fontFamily="@font/permanent_marker"
+        android:gravity="center_vertical"
+        app:layout_constraintStart_toEndOf="@id/dateButton"
+        app:layout_constraintTop_toTopOf="@id/dateButton"
+        app:layout_constraintWidth_percent="0.30"
+        android:layout_marginStart="8dp"
+        android:maxWidth="200dp"/>
+
+    <!-- Record Button -->
+    <ImageButton
+        android:id="@+id/recordButton"
+        android:layout_width="75dp"
+        android:layout_height="75dp"
+        android:background="@drawable/bg_circle_button_selector"
+        android:contentDescription="@string/start_recording"
+        android:enabled="false"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_mic"
+        app:tint="@android:color/white"
+        app:layout_constraintTop_toBottomOf="@id/dayTitle"
+        app:layout_constraintStart_toStartOf="@id/tapeLogo"
+        app:layout_constraintEnd_toEndOf="@id/tapeLogo"
+        android:layout_marginTop="22dp"/>
+
+    <!-- Recordings list -->
+    <ScrollView
+        android:id="@+id/recordingsScroll"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@id/tapeLogo"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintWidth_percent="0.35">
+
+        <LinearLayout
+            android:id="@+id/recordingsList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="8dp"/>
+    </ScrollView>
+
+    <!-- Calendar Container -->
+    <LinearLayout
+        android:id="@+id/calendarContainer"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"
+        android:background="#FFFFFF"
+        android:padding="8dp"
+        app:layout_constraintTop_toBottomOf="@id/dateButton"
+        app:layout_constraintStart_toStartOf="@id/tapeLogo"
+        app:layout_constraintEnd_toEndOf="@id/tapeLogo"
+        app:layout_constraintBottom_toTopOf="@id/recordButton">
+
+        <com.prolificinteractive.materialcalendarview.MaterialCalendarView
+            android:id="@+id/materialCalendarView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
