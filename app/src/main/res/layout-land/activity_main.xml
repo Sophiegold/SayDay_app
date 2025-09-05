@@ -67,6 +67,7 @@
         app:layout_constraintTop_toTopOf="@id/dateButton"
         app:layout_constraintWidth_percent="0.30"
         android:layout_marginStart="8dp"
+        android:autofillHints="name"
         android:maxWidth="200dp"/>
 
     <!-- Record Button -->
