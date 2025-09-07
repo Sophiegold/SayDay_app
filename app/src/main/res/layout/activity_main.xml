@@ -86,13 +86,29 @@
         app:layout_constraintTop_toBottomOf="@id/dayTitle"
         app:tint="@android:color/white" />
 
+    <!-- Recording Status Text (NEW) -->
+    <TextView
+        android:id="@+id/recordingStatusText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text=""
+        android:textColor="@android:color/holo_red_dark"
+        android:textSize="14sp"
+        android:fontFamily="@font/permanent_marker"
+        android:gravity="center"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/recordButton"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
     <!-- Recordings list below (portrait) -->
     <ScrollView
         android:id="@+id/recordingsScroll"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:fillViewport="true"
-        app:layout_constraintTop_toBottomOf="@id/recordButton"
+        app:layout_constraintTop_toBottomOf="@id/recordingStatusText"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

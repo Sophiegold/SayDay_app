@@ -86,6 +86,22 @@
         app:layout_constraintEnd_toEndOf="@id/tapeLogo"
         android:layout_marginTop="22dp"/>
 
+    <!-- Recording Status Text (NEW) -->
+    <TextView
+        android:id="@+id/recordingStatusText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text=""
+        android:textColor="@android:color/holo_red_dark"
+        android:textSize="12sp"
+        android:fontFamily="@font/permanent_marker"
+        android:gravity="center"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/recordButton"
+        app:layout_constraintStart_toStartOf="@id/recordButton"
+        app:layout_constraintEnd_toEndOf="@id/recordButton" />
+
     <!-- Recordings list -->
     <ScrollView
         android:id="@+id/recordingsScroll"
