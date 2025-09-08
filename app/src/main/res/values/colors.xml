@@ -1,5 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Existing colors -->
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Splash Screen Colors -->
+    <color name="splash_background">#FF1A1A2E</color>
+    <color name="splash_text_color">#FFFFFFFF</color>
+    <color name="splash_subtitle_color">#FFE0E0E0</color>
+    <color name="splash_accent_color">#FF4F46E5</color>
+
+    <!-- Alternative Light Theme Colors -->
+    <color name="splash_background_light">#FFF8F9FA</color>
+    <color name="splash_text_color_light">#FF1A1A2E</color>
+    <color name="splash_subtitle_color_light">#FF6C757D</color>
+    <color name="splash_accent_color_light">#FF007BFF</color>
 </resources>

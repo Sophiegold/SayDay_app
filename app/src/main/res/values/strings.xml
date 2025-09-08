@@ -1,8 +1,11 @@
 <resources>
-    <string name="app_name">App_SayDay</string>
+    <string name="app_name">TAIA</string>
     <string name="select_date">Select Date</string>
     <string name="start_recording">Start Recording</string>
     <string name="logo">logo</string>
     <string name="pick_a_day">Pick a Day</string>
     <string name="my_day">My Day...</string>
+    <string name="app_logo">App Logo</string>
+    <string name="sayday">SayDay</string>
+    <string name="record_your_day">Record Your Day</string>
 </resources>
