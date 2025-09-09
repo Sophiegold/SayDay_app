@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    id("kotlin-kapt")
 }
 
 android {
@@ -50,4 +51,6 @@ dependencies {
     implementation("androidx.dynamicanimation:dynamicanimation:1.0.0")
 // If you want to use Lottie animations for more advanced splash screens
     implementation("com.airbnb.android:lottie:6.1.0")
+    implementation(libs.glide)
+    kapt(libs.glide.compiler)
 }

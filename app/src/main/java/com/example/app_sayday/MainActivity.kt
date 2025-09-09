@@ -13,6 +13,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.res.ResourcesCompat
 import com.prolificinteractive.materialcalendarview.MaterialCalendarView
 import org.json.JSONObject
 import org.json.JSONArray
@@ -20,6 +21,7 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.Executors
+import com.bumptech.glide.Glide
 
 class MainActivity : AppCompatActivity() {
 
@@ -39,6 +41,9 @@ class MainActivity : AppCompatActivity() {
     private var selectedDate: String = ""
     private val recordingsByDate = mutableMapOf<String, MutableList<RecordingInfo>>()
 
+    // Day Titles Management
+    private val dayTitlesByDate = mutableMapOf<String, String>()
+
     // Data Persistence
     private lateinit var prefs: SharedPreferences
 
@@ -50,15 +55,17 @@ class MainActivity : AppCompatActivity() {
         private const val PERMISSION_REQUEST_CODE = 1001
         private const val PREFS_NAME = "recordings_prefs"
         private const val RECORDINGS_KEY = "recordings_data"
+        private const val DAY_TITLES_KEY = "day_titles_data"
         private const val SELECTED_DATE_KEY = "selected_date"
-        private const val MAX_RECORDING_DURATION = 300000L // 5 minutes
+        private const val MAX_RECORDING_DURATION = 2_400_000L // 40 minutes
     }
 
     data class RecordingInfo(
         val filePath: String,
         val fileName: String,
         val timestamp: Long,
-        val duration: Long = 0L
+        val duration: Long = 0L,
+        var customTitle: String = ""
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -70,10 +77,10 @@ class MainActivity : AppCompatActivity() {
         loadData()
         checkPermissions()
 
-        if (selectedDate.isNotEmpty()) {
-            updateDateButton()
-            updateRecordingsList()
-        }
+        // Always update the UI after loading data
+        updateDateButton()
+        updateDayTitle()
+        updateRecordingsList()
     }
 
     private fun initializeComponents() {
@@ -117,10 +124,24 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Day title focus handling
+        // Day title focus handling and save on text change
         dayTitle.setOnFocusChangeListener { _, hasFocus ->
             dayTitle.isCursorVisible = hasFocus
+            if (!hasFocus) {
+                saveDayTitle()
+            }
         }
+
+        // Save day title when text changes
+        dayTitle.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: android.text.Editable?) {
+                // Save after a short delay to avoid saving on every character
+                handler.removeCallbacks(saveDayTitleRunnable)
+                handler.postDelayed(saveDayTitleRunnable, 1000)
+            }
+        })
 
         // Audio manager callbacks
         audioManager.setRecordingCallback(object : AudioRecordingManager.RecordingCallback {
@@ -154,9 +175,47 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
+    private val saveDayTitleRunnable = Runnable {
+        saveDayTitle()
+    }
+
+    private fun saveDayTitle() {
+        if (selectedDate.isNotEmpty()) {
+            val currentTitle = dayTitle.text.toString().trim()
+            if (currentTitle.isNotEmpty()) {
+                dayTitlesByDate[selectedDate] = currentTitle
+            } else {
+                dayTitlesByDate.remove(selectedDate)
+            }
+            saveData()
+        }
+    }
+
+    private fun updateDayTitle() {
+        if (selectedDate.isEmpty()) {
+            dayTitle.setText("")
+            return
+        }
+
+        val savedTitle = dayTitlesByDate[selectedDate] ?: ""
+        dayTitle.setText(savedTitle)
+
+        // Set hint based on selected date
+        val dateFormat = SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.getDefault())
+        try {
+            val date = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(selectedDate)
+            date?.let {
+                dayTitle.hint = "Add a title for ${dateFormat.format(it)}"
+            }
+        } catch (e: Exception) {
+            dayTitle.hint = "Add a title for this day"
+        }
+    }
+
     private fun checkPermissions() {
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO)
-            != PackageManager.PERMISSION_GRANTED) {
+            != PackageManager.PERMISSION_GRANTED
+        ) {
             ActivityCompat.requestPermissions(
                 this,
                 arrayOf(android.Manifest.permission.RECORD_AUDIO),
@@ -181,6 +240,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadData() {
+
         // Load recordings data using JSON
         val recordingsJson = prefs.getString(RECORDINGS_KEY, "{}")
         try {
@@ -199,7 +259,8 @@ class MainActivity : AppCompatActivity() {
                         filePath = recordingObj.getString("filePath"),
                         fileName = recordingObj.getString("fileName"),
                         timestamp = recordingObj.getLong("timestamp"),
-                        duration = recordingObj.optLong("duration", 0L)
+                        duration = recordingObj.optLong("duration", 0L),
+                        customTitle = recordingObj.optString("customTitle", "")
                     )
                     recordingsList.add(recording)
                 }
@@ -213,8 +274,42 @@ class MainActivity : AppCompatActivity() {
             recordingsByDate.clear()
         }
 
+        // Load day titles data
+        val dayTitlesJson = prefs.getString(DAY_TITLES_KEY, "{}")
+        try {
+            val titlesObject = JSONObject(dayTitlesJson!!)
+            dayTitlesByDate.clear()
+
+            val titleKeys = titlesObject.keys()
+            while (titleKeys.hasNext()) {
+                val dateKey = titleKeys.next()
+                val title = titlesObject.getString(dateKey)
+                dayTitlesByDate[dateKey] = title
+            }
+        } catch (e: Exception) {
+            // If parsing fails, start with empty data
+            dayTitlesByDate.clear()
+        }
+
         // Load selected date
         selectedDate = prefs.getString(SELECTED_DATE_KEY, "") ?: ""
+        recordButton.isEnabled = selectedDate.isNotEmpty()
+
+        if (selectedDate.isEmpty()) {
+            val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+            selectedDate = today
+
+            // Also set the calendar view to today's date
+            val cal = Calendar.getInstance()
+            calendarView.selectedDate =
+                com.prolificinteractive.materialcalendarview.CalendarDay.from(
+                    cal.get(Calendar.YEAR),
+                    cal.get(Calendar.MONTH), // No +1 needed based on your fix
+                    cal.get(Calendar.DAY_OF_MONTH)
+                )
+        }
+
+
         recordButton.isEnabled = selectedDate.isNotEmpty()
 
         // Update calendar indicators after loading data
@@ -224,8 +319,8 @@ class MainActivity : AppCompatActivity() {
     private fun saveData() {
         executor.execute {
             try {
-                val jsonObject = JSONObject()
-
+                // Save recordings data
+                val recordingsObject = JSONObject()
                 recordingsByDate.forEach { (date, recordings) ->
                     val recordingsArray = JSONArray()
                     recordings.forEach { recording ->
@@ -234,14 +329,22 @@ class MainActivity : AppCompatActivity() {
                             put("fileName", recording.fileName)
                             put("timestamp", recording.timestamp)
                             put("duration", recording.duration)
+                            put("customTitle", recording.customTitle)
                         }
                         recordingsArray.put(recordingObj)
                     }
-                    jsonObject.put(date, recordingsArray)
+                    recordingsObject.put(date, recordingsArray)
+                }
+
+                // Save day titles data
+                val titlesObject = JSONObject()
+                dayTitlesByDate.forEach { (date, title) ->
+                    titlesObject.put(date, title)
                 }
 
                 prefs.edit()
-                    .putString(RECORDINGS_KEY, jsonObject.toString())
+                    .putString(RECORDINGS_KEY, recordingsObject.toString())
+                    .putString(DAY_TITLES_KEY, titlesObject.toString())
                     .putString(SELECTED_DATE_KEY, selectedDate)
                     .apply()
             } catch (e: Exception) {
@@ -255,7 +358,8 @@ class MainActivity : AppCompatActivity() {
             val keysToRemove = mutableListOf<String>()
 
             recordingsByDate.forEach { (date, recordings) ->
-                val validRecordings = recordings.filter { File(it.filePath).exists() }.toMutableList()
+                val validRecordings =
+                    recordings.filter { File(it.filePath).exists() }.toMutableList()
                 if (validRecordings.size != recordings.size) {
                     if (validRecordings.isEmpty()) {
                         keysToRemove.add(date)
@@ -286,13 +390,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun handleDateSelection(date: com.prolificinteractive.materialcalendarview.CalendarDay) {
+        // Save current day title before switching dates
+        saveDayTitle()
+
         val cal = Calendar.getInstance()
-        cal.set(date.year, date.month - 1, date.day)
+        cal.set(date.year, date.month, date.day)
 
         selectedDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(cal.time)
         recordButton.isEnabled = true
 
         updateDateButton()
+        updateDayTitle() // Update day title for the new selected date
         updateRecordingsList()
         toggleCalendarVisibility()
         saveData()
@@ -313,9 +421,47 @@ class MainActivity : AppCompatActivity() {
         dateButton.text = "$dayNumber\n$monthName\n$yearNumber"
     }
 
+
+    private fun showEditTitleDialog(recording: RecordingInfo) {
+        val editText = EditText(this).apply {
+            setText(recording.customTitle.ifEmpty {
+                // Default to time-based name if no custom title
+                recording.fileName.replace("recording_${selectedDate}_", "").replace(".3gp", "")
+            })
+            hint = "Enter recording title"
+            setSingleLine(true)
+            selectAll()
+        }
+
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("Edit Recording Title")
+            .setView(editText)
+            .setPositiveButton("Save") { _, _ ->
+                val newTitle = editText.text.toString().trim()
+                updateRecordingTitle(recording, newTitle)
+            }
+            .setNegativeButton("Cancel", null)
+            .create()
+
+        dialog.show()
+
+        // Show keyboard automatically
+        editText.requestFocus()
+        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.showSoftInput(editText, InputMethodManager.SHOW_IMPLICIT)
+    }
+
+    private fun updateRecordingTitle(recording: RecordingInfo, newTitle: String) {
+        recording.customTitle = newTitle
+        updateRecordingsList() // Refresh the list to show new title
+        saveData() // Save changes
+        showSuccess("Title updated successfully!")
+    }
+
     private fun startRecording() {
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO)
-            != PackageManager.PERMISSION_GRANTED) {
+            != PackageManager.PERMISSION_GRANTED
+        ) {
             showError("Please grant audio recording permission")
             checkPermissions()
             return
@@ -386,10 +532,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun createRecordingRow(recording: RecordingInfo) {
+
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             setPadding(16, 12, 16, 12)
-            background = ContextCompat.getDrawable(this@MainActivity, android.R.drawable.list_selector_background)
+            background = ContextCompat.getDrawable(
+                this@MainActivity,
+                android.R.drawable.list_selector_background
+            )
         }
 
         // Recording info
@@ -398,20 +548,46 @@ class MainActivity : AppCompatActivity() {
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         }
 
+        val localTimeZone = TimeZone.getDefault()
+
+        val displayTitle = recording.customTitle.ifEmpty {
+            val dateFormat = SimpleDateFormat("MMM d, yyyy, HH:mm", Locale.getDefault())
+            dateFormat.timeZone = localTimeZone
+            "Recording " + dateFormat.format(Date(recording.timestamp))
+        }
+
+
         val nameText = TextView(this).apply {
-            text = recording.fileName.replace("recording_${selectedDate}_", "").replace(".3gp", "")
+            text = displayTitle
+            typeface = ResourcesCompat.getFont(this@MainActivity, R.font.permanent_marker)
             textSize = 14f
             setTextColor(ContextCompat.getColor(this@MainActivity, android.R.color.black))
+            // Make it clickable for editing
+            setOnClickListener { showEditTitleDialog(recording) }
+            background = ContextCompat.getDrawable(
+                this@MainActivity,
+                android.R.drawable.list_selector_background
+            )
+            setPadding(8, 8, 8, 8)
         }
 
         val timeText = TextView(this).apply {
-            text = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(recording.timestamp))
+            text =
+                SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(recording.timestamp))
             textSize = 12f
             setTextColor(ContextCompat.getColor(this@MainActivity, android.R.color.darker_gray))
         }
 
         infoLayout.addView(nameText)
         infoLayout.addView(timeText)
+
+        // Edit button (optional - you can also just tap the title)
+        val editButton = ImageButton(this).apply {
+            setImageResource(R.drawable.ic_pencil)// Use built-in edit icon
+            background = null
+            setPadding(12, 12, 12, 12)
+            setOnClickListener { showEditTitleDialog(recording) }
+        }
 
         // Play/Pause button
         val playButton = ImageButton(this).apply {
@@ -434,6 +610,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         row.addView(infoLayout)
+        row.addView(editButton) // Add edit button
         row.addView(playButton)
         row.addView(deleteButton)
         recordingsList.addView(row)
@@ -456,7 +633,7 @@ class MainActivity : AppCompatActivity() {
         // Reset all play buttons to play state
         for (i in 0 until recordingsList.childCount) {
             val row = recordingsList.getChildAt(i) as? LinearLayout
-            val playButton = row?.getChildAt(1) as? ImageButton
+            val playButton = row?.getChildAt(2) as? ImageButton // Changed from 1 to 2
             playButton?.setImageResource(R.drawable.ic_play)
         }
     }
@@ -498,17 +675,23 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateRecordingUI(isRecording: Boolean) {
-        recordButton.setImageResource(if (isRecording) R.drawable.ic_stoprecord else R.drawable.ic_mic)
-
         if (isRecording) {
-            val pulseAnimation = AnimationUtils.loadAnimation(this, android.R.anim.slide_in_left)
-            recordButton.startAnimation(pulseAnimation)
-        } else {
-            recordButton.clearAnimation()
-        }
+            // Load blinking red GIF into record button
+            Glide.with(this)
+                .asGif()
+                .load(R.drawable.red_blink)
+                .into(recordButton)
 
-        recordingStatusText.text = if (isRecording) "Recording..." else ""
-        recordingStatusText.visibility = if (isRecording) View.VISIBLE else View.GONE
+            recordingStatusText.text = "Recording..."
+            recordingStatusText.visibility = View.VISIBLE
+        } else {
+            // Clear GIF / reset to empty or default
+            recordButton.setImageDrawable(null)
+            Glide.with(this).clear(recordButton)
+
+            recordingStatusText.text = ""
+            recordingStatusText.visibility = View.GONE
+        }
     }
 
     private var recordingTimer: Timer? = null
@@ -529,7 +712,8 @@ class MainActivity : AppCompatActivity() {
                         val seconds = elapsed / 1000
                         val minutes = seconds / 60
                         val secs = seconds % 60
-                        recordingStatusText.text = "Recording... ${minutes}:${String.format("%02d", secs)}"
+                        recordingStatusText.text =
+                            "Recording... ${minutes}:${String.format("%02d", secs)}"
                     }
                 }
             }, 1000, 1000)
@@ -564,6 +748,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
+        saveDayTitle() // Save current day title when app goes to background
         saveData()
     }
 
@@ -580,72 +765,35 @@ class MainActivity : AppCompatActivity() {
         // Remove existing decorators
         calendarView.removeDecorators()
 
+        // Add background color for today's date
+        val today = com.prolificinteractive.materialcalendarview.CalendarDay.today()
+        calendarView.addDecorator(TodayDecorator(this, today))
+
         // Get all dates that have recordings (filter out empty lists)
-        val datesWithRecordings = recordingsByDate.filterValues { it.isNotEmpty() }.keys.mapNotNull { dateString ->
-            try {
-                val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                val date = dateFormat.parse(dateString)
-                date?.let {
-                    val cal = Calendar.getInstance()
-                    cal.time = it
-                    com.prolificinteractive.materialcalendarview.CalendarDay.from(
-                        cal.get(Calendar.YEAR),
-                        cal.get(Calendar.MONTH) + 1, // MaterialCalendarView uses 1-based months
-                        cal.get(Calendar.DAY_OF_MONTH)
-                    )
+        val datesWithRecordings =
+            recordingsByDate.filterValues { it.isNotEmpty() }.keys.mapNotNull { dateString ->
+                try {
+                    val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                    val date = dateFormat.parse(dateString)
+                    date?.let {
+                        val cal = Calendar.getInstance()
+                        cal.time = it
+                        com.prolificinteractive.materialcalendarview.CalendarDay.from(
+                            cal.get(Calendar.YEAR),
+                            cal.get(Calendar.MONTH), // No +1 needed based on your fix
+                            cal.get(Calendar.DAY_OF_MONTH)
+                        )
+                    }
+                } catch (e: Exception) {
+                    null
                 }
-            } catch (e: Exception) {
-                null
             }
-        }
 
         // Add red dot decorator for dates with recordings
         if (datesWithRecordings.isNotEmpty()) {
             calendarView.addDecorator(RecordingDotDecorator(this, datesWithRecordings))
         }
     }
+}
 
     // Custom decorator class for showing red dots on dates with recordings
-    private class RecordingDotDecorator(
-        private val context: Context,
-        private val dates: Collection<com.prolificinteractive.materialcalendarview.CalendarDay>
-    ) : com.prolificinteractive.materialcalendarview.DayViewDecorator {
-
-        override fun shouldDecorate(day: com.prolificinteractive.materialcalendarview.CalendarDay): Boolean {
-            return dates.contains(day)
-        }
-
-        override fun decorate(view: com.prolificinteractive.materialcalendarview.DayViewFacade) {
-            view.addSpan(DotSpan(8f, ContextCompat.getColor(context, android.R.color.holo_red_dark)))
-        }
-    }
-
-    // Custom span class for drawing dots
-    private class DotSpan(private val radius: Float, private val color: Int) :
-        android.text.style.LineBackgroundSpan {
-
-        override fun drawBackground(
-            canvas: android.graphics.Canvas,
-            paint: android.graphics.Paint,
-            left: Int,
-            right: Int,
-            top: Int,
-            baseline: Int,
-            bottom: Int,
-            text: CharSequence,
-            start: Int,
-            end: Int,
-            lineNumber: Int
-        ) {
-            val oldColor = paint.color
-            paint.color = color
-
-            // Draw dot at the bottom center of the date
-            val centerX = (left + right) / 2f
-            val centerY = bottom + radius + 4f // Slightly below the date text
-
-            canvas.drawCircle(centerX, centerY, radius, paint)
-            paint.color = oldColor
-        }
-    }
-}

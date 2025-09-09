@@ -6,26 +6,26 @@
     android:gravity="center">
 
     <!-- Main Logo -->
+
+    <!-- App Name -->
     <ImageView
         android:id="@+id/splashLogo"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:src="@drawable/my_logo"
+        android:layout_height="408dp"
+        android:contentDescription="@string/app_logo"
         android:scaleType="centerInside"
-        android:contentDescription="@string/app_logo" />
+        android:src="@drawable/taia" />
 
-    <!-- App Name -->
     <TextView
         android:id="@+id/appNameText"
         android:layout_width="wrap_content"
-        android:layout_height="0dp"
+        android:layout_height="50dp"
         android:layout_below="@id/splashLogo"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="24dp"
-        android:text="@string/sayday"
-        android:textColor="@color/splash_text_color"
-        android:textSize="28sp"
+        android:text="@string/record_your_day"
+        android:textColor="@color/splash_background"
+        android:textSize="30sp"
         android:textStyle="bold"
         android:fontFamily="sans-serif-medium" />
 
@@ -37,8 +37,8 @@
         android:layout_below="@id/appNameText"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="8dp"
-        android:text="@string/record_your_day"
-        android:textColor="@color/splash_subtitle_color"
+        android:text="@string/record_your_day_tagline"
+        android:textColor="@color/purple_500"
         android:textSize="16sp"
         android:alpha="0.8" />
 
