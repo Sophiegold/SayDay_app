@@ -9,4 +9,5 @@
     <string name="sayday">TApe It All!</string>
     <string name="record_your_day">Record Your Day</string>
     <string name="record_your_day_tagline">Yesterday’s moments, today’s mixtape.</string>
+    <string name="recordings_list">recordings list</string>
 </resources>

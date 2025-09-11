@@ -11,7 +11,7 @@
     <ImageView
         android:id="@+id/splashLogo"
         android:layout_width="match_parent"
-        android:layout_height="408dp"
+        android:layout_height="300dp"
         android:contentDescription="@string/app_logo"
         android:scaleType="centerInside"
         android:src="@drawable/taia" />
@@ -19,15 +19,15 @@
     <TextView
         android:id="@+id/appNameText"
         android:layout_width="wrap_content"
-        android:layout_height="50dp"
+        android:layout_height="58dp"
         android:layout_below="@id/splashLogo"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="24dp"
+        android:layout_marginTop="8dp"
         android:text="@string/record_your_day"
         android:textColor="@color/splash_background"
-        android:textSize="30sp"
-        android:textStyle="bold"
-        android:fontFamily="sans-serif-medium" />
+        android:fontFamily="@font/playpen_medium"
+        android:textSize="38sp"
+        android:textStyle="bold" />
 
     <!-- Tagline -->
     <TextView
@@ -62,7 +62,7 @@
         android:layout_centerHorizontal="true"
         android:layout_marginTop="16dp"
         android:text="Loading..."
-        android:textColor="@color/splash_subtitle_color"
+        android:textColor="@color/splash_accent_color"
         android:textSize="14sp"
         android:alpha="0.7" />
 

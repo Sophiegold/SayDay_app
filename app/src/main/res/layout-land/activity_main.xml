@@ -10,6 +10,8 @@
     android:padding="8dp">
 
     <!-- Tape logo -->
+
+    <!-- Date Button -->
     <ImageView
         android:id="@+id/tapeLogo"
         android:layout_width="0dp"
@@ -17,18 +19,18 @@
         android:adjustViewBounds="true"
         android:contentDescription="@string/logo"
         android:scaleType="fitCenter"
-        android:src="@drawable/my_logo"
+        android:src="@drawable/taia"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@id/recordingsScroll"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintWidth_percent="0.65" />
+        app:layout_constraintVertical_bias="0.495"
+        app:layout_constraintWidth_percent="0.60" />
 
-    <!-- Date Button -->
     <TextView
         android:id="@+id/dateButton"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
         android:gravity="center"
         android:text="@string/pick_a_day"
         android:textColor="@color/highlight_text_color"
@@ -40,54 +42,59 @@
         android:minLines="3"
         android:maxLines="3"
         android:fontFamily="@font/permanent_marker"
-        android:textSize="18sp"
-        app:layout_constraintWidth_percent="0.20"
-        app:layout_constraintTop_toTopOf="@id/tapeLogo"
+        android:textSize="20sp"
+        app:layout_constraintWidth_percent="0.15"
+        app:layout_constraintDimensionRatio="1:1"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="@id/tapeLogo"
         app:layout_constraintEnd_toEndOf="@id/dayTitle"
         app:layout_constraintBottom_toBottomOf="@id/tapeLogo"
         app:layout_constraintHorizontal_bias="0.13"
-        app:layout_constraintVertical_bias="0.25"/>
+        app:layout_constraintVertical_bias="0.21"/>
 
     <!-- Day Title EditText -->
     <EditText
         android:id="@+id/dayTitle"
-        android:layout_width="229dp"
-        android:layout_height="50dp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         android:layout_marginStart="8dp"
+        android:layout_marginTop="53dp"
         android:autofillHints="name"
         android:drawableEnd="@drawable/ic_pencil"
         android:drawablePadding="4dp"
-        android:ellipsize="end"
-        android:fontFamily="@font/permanent_marker"
-        android:gravity="center_vertical"
+        android:fontFamily="@font/playpen_medium"
+        android:gravity="top|start"
         android:hint="@string/my_day"
         android:inputType="textCapSentences"
-        android:lines="2"
-        android:minLines="2"
-        android:maxLines="2"
+        android:singleLine="true"
         android:maxWidth="200dp"
         android:padding="8dp"
-        android:singleLine="true"
+        android:scrollHorizontally="false"
+        android:ellipsize="none"
         android:textColor="@android:color/black"
         android:textSize="18sp"
         app:layout_constraintStart_toEndOf="@id/dateButton"
         app:layout_constraintTop_toTopOf="@id/dateButton"
+        app:layout_constraintHeight_percent="0.13"
         app:layout_constraintWidth_percent="0.30" />
+
 
     <!-- Record Button -->
     <ImageButton
         android:id="@+id/recordButton"
-        android:layout_width="114dp"
-        android:layout_height="59dp"
-        android:layout_marginTop="25dp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         android:background="@drawable/rec_button"
+        android:layout_marginBottom="8dp"
         android:contentDescription="@string/start_recording"
         android:enabled="false"
         android:scaleType="centerInside"
+        app:layout_constraintBottom_toBottomOf="@+id/tapeLogo"
         app:layout_constraintEnd_toEndOf="@id/tapeLogo"
         app:layout_constraintStart_toStartOf="@id/tapeLogo"
-        app:layout_constraintTop_toBottomOf="@id/dayTitle"
+        app:layout_constraintWidth_percent="0.14"
+        app:layout_constraintDimensionRatio="1:1"
+
         app:tint="@android:color/white" />
 
     <!-- Recording Status Text (NEW) -->
@@ -98,7 +105,7 @@
         android:layout_marginTop="8dp"
         android:text=""
         android:textColor="@color/white"
-        android:textSize="12sp"
+        android:textSize="13sp"
         android:fontFamily="@font/permanent_marker"
         android:gravity="center"
         android:visibility="gone"
@@ -109,7 +116,9 @@
     <!-- Recordings list -->
     <ScrollView
         android:id="@+id/recordingsScroll"
+        android:contentDescription="@string/recordings_list"
         android:background="@drawable/recs_paper"
+        android:padding="6dp"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:fillViewport="true"

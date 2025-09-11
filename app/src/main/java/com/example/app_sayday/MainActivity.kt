@@ -3,6 +3,8 @@ package com.example.app_sayday
 import android.content.Context
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.media.MediaPlayer
+import android.media.SoundPool
 import android.os.*
 import android.view.MotionEvent
 import android.view.View
@@ -36,6 +38,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var calendarContainer: LinearLayout
     private lateinit var recordingStatusText: TextView
 
+
+
+
     // Recording Management
     private lateinit var audioManager: AudioRecordingManager
     private var selectedDate: String = ""
@@ -68,6 +73,9 @@ class MainActivity : AppCompatActivity() {
         var customTitle: String = ""
     )
 
+
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -81,6 +89,10 @@ class MainActivity : AppCompatActivity() {
         updateDateButton()
         updateDayTitle()
         updateRecordingsList()
+
+        // Start the periodic button pulsing
+        startButtonAnimations()
+
     }
 
     private fun initializeComponents() {
@@ -97,7 +109,7 @@ class MainActivity : AppCompatActivity() {
 
         // Initialize managers and preferences
         audioManager = AudioRecordingManager(this)
-        prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
 
         // Set initial states
         recordButton.isEnabled = false
@@ -175,6 +187,14 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
+    // Simplified methods in MainActivity:
+    private fun startButtonAnimations() {
+        // Start periodic pulsing after app is fully loaded (reduced initial delay)
+        handler.postDelayed({
+            AnimationHelper.startPeriodicPulsing(this, recordButton, dateButton)
+        }, 1500) // Wait only 1.5 seconds after app loads (was 3 seconds)
+    }
+
     private val saveDayTitleRunnable = Runnable {
         saveDayTitle()
     }
@@ -200,16 +220,8 @@ class MainActivity : AppCompatActivity() {
         val savedTitle = dayTitlesByDate[selectedDate] ?: ""
         dayTitle.setText(savedTitle)
 
-        // Set hint based on selected date
-        val dateFormat = SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.getDefault())
-        try {
-            val date = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(selectedDate)
-            date?.let {
-                dayTitle.hint = "Add a title for ${dateFormat.format(it)}"
-            }
-        } catch (e: Exception) {
-            dayTitle.hint = "Add a title for this day"
-        }
+        // Simple hint
+        dayTitle.hint = "Add a title here..."
     }
 
     private fun checkPermissions() {
@@ -271,6 +283,7 @@ class MainActivity : AppCompatActivity() {
             cleanupInvalidRecordings()
         } catch (e: Exception) {
             // If parsing fails, start with empty data
+            android.util.Log.w("MainActivity", "Failed to parse recordings data", e)
             recordingsByDate.clear()
         }
 
@@ -288,6 +301,7 @@ class MainActivity : AppCompatActivity() {
             }
         } catch (e: Exception) {
             // If parsing fails, start with empty data
+            android.util.Log.w("MainActivity", "Failed to parse day titles data", e)
             dayTitlesByDate.clear()
         }
 
@@ -347,7 +361,7 @@ class MainActivity : AppCompatActivity() {
                     .putString(DAY_TITLES_KEY, titlesObject.toString())
                     .putString(SELECTED_DATE_KEY, selectedDate)
                     .apply()
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 // Handle save error gracefully
             }
         }
@@ -421,7 +435,6 @@ class MainActivity : AppCompatActivity() {
         dateButton.text = "$dayNumber\n$monthName\n$yearNumber"
     }
 
-
     private fun showEditTitleDialog(recording: RecordingInfo) {
         val editText = EditText(this).apply {
             setText(recording.customTitle.ifEmpty {
@@ -459,6 +472,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startRecording() {
+        //  Check audio recording permission
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO)
             != PackageManager.PERMISSION_GRANTED
         ) {
@@ -467,17 +481,31 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
+        //  Check that a date has been selected
         if (selectedDate.isEmpty()) {
             showError("Please select a date first")
             return
         }
 
+        // Pause animations immediately when starting to record
+        AnimationHelper.pauseAnimations()
+
         val fileName = generateFileName()
-        audioManager.startRecording(fileName)
+
+        // Play start recording sound
+        val mediaPlayer = MediaPlayer.create(this, R.raw.start_record)
+
+        mediaPlayer.setOnCompletionListener {
+            // Start actual recording AFTER sound finishes
+            audioManager.startRecording(fileName)
+            mediaPlayer.release()
+        }
+        mediaPlayer.start()
     }
 
     private fun stopRecording() {
         audioManager.stopRecording()
+        AnimationHelper.resumeAnimations(recordButton, dateButton)
     }
 
     private fun generateFileName(): String {
@@ -556,10 +584,9 @@ class MainActivity : AppCompatActivity() {
             "Recording " + dateFormat.format(Date(recording.timestamp))
         }
 
-
         val nameText = TextView(this).apply {
             text = displayTitle
-            typeface = ResourcesCompat.getFont(this@MainActivity, R.font.permanent_marker)
+            typeface = ResourcesCompat.getFont(this@MainActivity, R.font.playpen_medium)
             textSize = 14f
             setTextColor(ContextCompat.getColor(this@MainActivity, android.R.color.black))
             // Make it clickable for editing
@@ -571,15 +598,8 @@ class MainActivity : AppCompatActivity() {
             setPadding(8, 8, 8, 8)
         }
 
-        val timeText = TextView(this).apply {
-            text =
-                SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(recording.timestamp))
-            textSize = 12f
-            setTextColor(ContextCompat.getColor(this@MainActivity, android.R.color.darker_gray))
-        }
-
         infoLayout.addView(nameText)
-        infoLayout.addView(timeText)
+
 
         // Edit button (optional - you can also just tap the title)
         val editButton = ImageButton(this).apply {
@@ -732,7 +752,7 @@ class MainActivity : AppCompatActivity() {
             v.getGlobalVisibleRect(outRect)
             if (!outRect.contains(ev.rawX.toInt(), ev.rawY.toInt())) {
                 v.clearFocus()
-                val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
                 imm.hideSoftInputFromWindow(v.windowToken, 0)
             }
         }
@@ -742,6 +762,7 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         stopRecordingTimer()
+        AnimationHelper.cleanup()
         audioManager.cleanup()
         executor.shutdown()
     }
@@ -784,7 +805,7 @@ class MainActivity : AppCompatActivity() {
                             cal.get(Calendar.DAY_OF_MONTH)
                         )
                     }
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     null
                 }
             }
@@ -796,4 +817,4 @@ class MainActivity : AppCompatActivity() {
     }
 }
 
-    // Custom decorator class for showing red dots on dates with recordings
+// Custom decorator class for showing red dots on dates with recordings
