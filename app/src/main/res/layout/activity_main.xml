@@ -5,8 +5,14 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_app"
-    android:padding="8dp">
+    android:background="@drawable/bg_app">
+
+    <ImageView
+        android:layout_width="120dp"
+        android:layout_height="match_parent"
+        android:background="@drawable/ic_launcher_background"
+        android:translationX="8dp"
+        tools:ignore="MissingConstraints" />
 
     <!-- Tape logo -->
 
@@ -125,13 +131,23 @@
 
         <LinearLayout
             android:id="@+id/recordingsList"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="8dp"
             android:fontFamily="@font/permanent_marker"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="8dp"/>
     </ScrollView>
+
+    <ImageView
+        android:layout_width="0dp"
+        android:layout_height="50dp"
+        android:src="@drawable/sayday_logo"
+        app:layout_constraintStart_toEndOf="@id/dateButton"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginStart="30dp"
+        tools:ignore="MissingConstraints"
+        app:layout_constraintWidth_percent="0.35"/>
 
     <!-- Calendar Picker Container with MaterialCalendarView -->
     <LinearLayout
@@ -150,5 +166,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"/>
     </LinearLayout>
+
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

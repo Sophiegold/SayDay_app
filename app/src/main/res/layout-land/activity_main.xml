@@ -6,10 +6,14 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_app"
-    android:padding="8dp">
+    android:background="@drawable/bg_app">
 
-
+    <ImageView
+        android:layout_width="120dp"
+        android:layout_height="match_parent"
+        android:background="@drawable/ic_launcher_background"
+        android:translationX="8dp"
+        tools:ignore="MissingConstraints" />
 
     <!-- Date Button -->
     <ImageView
@@ -42,15 +46,15 @@
         android:minLines="3"
         android:maxLines="3"
         android:fontFamily="@font/permanent_marker"
-        android:textSize="20sp"
-        app:layout_constraintWidth_percent="0.15"
+        android:textSize="19sp"
+        app:layout_constraintWidth_percent="0.17"
         app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="@id/tapeLogo"
         app:layout_constraintEnd_toEndOf="@id/dayTitle"
         app:layout_constraintBottom_toBottomOf="@id/tapeLogo"
-        app:layout_constraintHorizontal_bias="0.13"
-        app:layout_constraintVertical_bias="0.21"/>
+        app:layout_constraintHorizontal_bias="0.1"
+        app:layout_constraintVertical_bias="0.24"/>
 
     <!-- Day Title EditText -->
     <EditText
@@ -138,6 +142,16 @@
 
     </ScrollView>
 
+    <ImageView
+        android:layout_width="0dp"
+        android:layout_height="70dp"
+        android:src="@drawable/sayday_logo"
+        app:layout_constraintStart_toEndOf="@id/dateButton"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginStart="0dp"
+        tools:ignore="MissingConstraints"
+        app:layout_constraintWidth_percent="0.35"/>
+
     <!-- Calendar Container -->
 
     <LinearLayout
@@ -158,6 +172,8 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_margin="4dp" />
+
+
 
     </LinearLayout>
 

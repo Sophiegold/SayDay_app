@@ -26,6 +26,6 @@
 
     <!-- Stripe 5 -->
     <path
-        android:fillColor="#2196F3"
+        android:fillColor="#FFF3C9"
         android:pathData="M160,0 L200,0 L200,200 L160,200 Z" />
 </vector>
