@@ -1,13 +1,13 @@
 <resources>
-    <string name="app_name">TApeItAll</string>
+    <string name="app_name">SayDay</string>
     <string name="select_date">Select Date</string>
     <string name="start_recording">Start Recording</string>
     <string name="logo">logo</string>
     <string name="pick_a_day">Pick a Day</string>
     <string name="my_day">My Day...</string>
     <string name="app_logo">App Logo</string>
-    <string name="sayday">TApe It All!</string>
-    <string name="record_your_day">Record Your Day</string>
-    <string name="record_your_day_tagline">Yesterday’s moments, today’s mixtape.</string>
+    <string name="sayday">SayDay</string>
+    <string name="record_your_day">SayDay</string>
+    <string name="record_your_day_tagline">Record. Remember. Relive.</string>
     <string name="recordings_list">recordings list</string>
 </resources>

@@ -1,15 +1,16 @@
 package com.example.app_sayday
 
-
 import android.content.Intent
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.animation.AnimationUtils
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class SplashActivity : AppCompatActivity() {
 
@@ -17,9 +18,10 @@ class SplashActivity : AppCompatActivity() {
     private lateinit var appNameText: TextView
     private lateinit var taglineText: TextView
     private lateinit var loadingText: TextView
+    private lateinit var logoView: TextView // ✅ Make sure in XML it's really a TextView
 
     companion object {
-        private const val SPLASH_DURATION = 3000L // 3 seconds
+        private const val SPLASH_DURATION = 4000L // 4 seconds
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -29,12 +31,24 @@ class SplashActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_splash)
 
-        // Hide action bar
+        // Hide action bar (optional if using NoActionBar theme)
         supportActionBar?.hide()
 
         initializeViews()
         startAnimations()
-        navigateToMainActivity()
+
+        // Launch MainActivity after SPLASH_DURATION
+        lifecycleScope.launch {
+            delay(SPLASH_DURATION)
+            navigateToMainActivity()
+        }
+
+        // Disable back press during splash
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                // Do nothing
+            }
+        })
     }
 
     private fun initializeViews() {
@@ -42,10 +56,10 @@ class SplashActivity : AppCompatActivity() {
         appNameText = findViewById(R.id.appNameText)
         taglineText = findViewById(R.id.taglineText)
         loadingText = findViewById(R.id.loadingText)
+        logoView = findViewById(R.id.logoView)
     }
 
     private fun startAnimations() {
-        // Logo fade in and scale animation
         val logoFadeIn = AnimationUtils.loadAnimation(this, android.R.anim.fade_in).apply {
             duration = 1000
         }
@@ -55,7 +69,6 @@ class SplashActivity : AppCompatActivity() {
             startOffset = 200
         }
 
-        // Text animations
         val textFadeIn = AnimationUtils.loadAnimation(this, android.R.anim.fade_in).apply {
             duration = 800
             startOffset = 600
@@ -66,35 +79,22 @@ class SplashActivity : AppCompatActivity() {
             startOffset = 800
         }
 
-        // Apply animations
         splashLogo.startAnimation(logoFadeIn)
-        splashLogo.startAnimation(logoScale)
         appNameText.startAnimation(textFadeIn)
         taglineText.startAnimation(slideUp)
+        logoView.startAnimation(logoFadeIn)
 
-        // Loading text with delay
-        Handler(Looper.getMainLooper()).postDelayed({
+        // Start loading text fade-in after 1s
+        lifecycleScope.launch {
+            delay(1000)
             loadingText.startAnimation(textFadeIn)
-        }, 1000)
+        }
     }
 
     private fun navigateToMainActivity() {
-        Handler(Looper.getMainLooper()).postDelayed({
-            // Start MainActivity
-            val intent = Intent(this, MainActivity::class.java)
-            startActivity(intent)
-
-            // Add transition animation
-            @Suppress("DEPRECATION")
-            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
-
-            // Close splash activity
-            finish()
-        }, SPLASH_DURATION)
-    }
-
-    override fun onBackPressed() {
-        // Disable back button on splash screen
-        super.onBackPressed()
+        val intent = Intent(this, MainActivity::class.java)
+        startActivity(intent)
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+        finish()
     }
 }
