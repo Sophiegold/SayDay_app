@@ -10,4 +10,6 @@
     <string name="record_your_day">SayDay</string>
     <string name="record_your_day_tagline">Record. Remember. Relive.</string>
     <string name="recordings_list">recordings list</string>
+    <string name="logo_small">logo_small</string>
+    <string name="bg_stripes">bg_stripes</string>
 </resources>

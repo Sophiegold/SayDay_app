@@ -3,15 +3,11 @@
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
-
-    <!-- Pencil body -->
     <path
-        android:fillColor="#000000"
-        android:pathData="M3,21v-3.75l11-11 3.75,3.75-11,11H3z"/>
-
-    <!-- Pencil tip -->
+        android:fillColor="#0D0C0C"
+        android:pathData="M3,17.25V21h3.75l11.06-11.06-3.75-3.75L3,17.25z"/>
     <path
-        android:fillColor="#FFC107"
-        android:pathData="M14.5,6.5l3,3L19,6l-3-3-1.5,1.5z"/>
+        android:fillColor="#FF9800"
+        android:pathData="M20.71,7.04c0.39-0.39,0.39-1.02,0-1.41l-2.34-2.34a0.9959,0.9959 0 0,0 -1.41,0l-1.83,1.83 3.75,3.75 1.83-1.83z"/>
 </vector>
 

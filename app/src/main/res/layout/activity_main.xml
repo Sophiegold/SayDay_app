@@ -3,21 +3,25 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
 
     xmlns:tools="http://schemas.android.com/tools"
+
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_app">
+    android:background="@drawable/bg_app3">
 
     <ImageView
         android:layout_width="120dp"
         android:layout_height="match_parent"
         android:background="@drawable/ic_launcher_background"
+        android:contentDescription="@string/bg_stripes"
         android:translationX="8dp"
+
         tools:ignore="MissingConstraints" />
 
     <!-- Tape logo -->
 
     <!-- Date button over the tape -->
     <ImageView
+        android:paddingTop="12dp"
         android:id="@+id/tapeLogo"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -86,7 +90,7 @@
         android:layout_marginBottom="-10dp"
         android:contentDescription="@string/start_recording"
         android:enabled="false"
-        android:scaleType="centerInside"
+        android:scaleType="centerCrop"
         app:layout_constraintBottom_toBottomOf="@+id/tapeLogo"
         app:layout_constraintEnd_toEndOf="@id/tapeLogo"
         app:layout_constraintStart_toStartOf="@id/tapeLogo"
@@ -136,12 +140,15 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
+            android:scrollbars="vertical"
+            android:fadingEdge="none"
             android:padding="8dp"/>
     </ScrollView>
 
     <ImageView
         android:layout_width="0dp"
         android:layout_height="50dp"
+        android:contentDescription="@string/logo_small"
         android:src="@drawable/sayday_logo"
         app:layout_constraintStart_toEndOf="@id/dateButton"
         app:layout_constraintTop_toTopOf="parent"

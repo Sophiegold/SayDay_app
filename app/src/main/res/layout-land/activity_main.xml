@@ -6,7 +6,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_app">
+    android:background="@drawable/bg_app3">
 
     <ImageView
         android:layout_width="120dp"
@@ -92,7 +92,7 @@
         android:layout_marginBottom="8dp"
         android:contentDescription="@string/start_recording"
         android:enabled="false"
-        android:scaleType="centerInside"
+        android:scaleType="centerCrop"
         app:layout_constraintBottom_toBottomOf="@+id/tapeLogo"
         app:layout_constraintEnd_toEndOf="@id/tapeLogo"
         app:layout_constraintStart_toStartOf="@id/tapeLogo"
@@ -145,12 +145,12 @@
     <ImageView
         android:layout_width="0dp"
         android:layout_height="70dp"
+        android:contentDescription="@string/logo_small"
         android:src="@drawable/sayday_logo"
         app:layout_constraintStart_toEndOf="@id/dateButton"
         app:layout_constraintTop_toTopOf="parent"
-        android:layout_marginStart="0dp"
-        tools:ignore="MissingConstraints"
-        app:layout_constraintWidth_percent="0.35"/>
+        android:layout_marginStart="-10dp"
+        app:layout_constraintWidth_percent="0.30"/>
 
     <!-- Calendar Container -->
 
