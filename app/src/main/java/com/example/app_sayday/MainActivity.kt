@@ -1,6 +1,8 @@
 package com.example.app_sayday
 
+import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.media.MediaPlayer
@@ -11,6 +13,7 @@ import android.view.View
 import android.view.animation.AnimationUtils
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -28,7 +31,7 @@ import com.bumptech.glide.Glide
 class MainActivity : AppCompatActivity() {
 
     // UI Components
-    private lateinit var logoImageView: ImageView
+    private lateinit var tapeLogoImageView: ImageView
     private lateinit var dateButton: TextView
     private lateinit var recordButton: ImageButton
     private lateinit var recordingsList: LinearLayout
@@ -37,9 +40,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var calendarView: MaterialCalendarView
     private lateinit var calendarContainer: LinearLayout
     private lateinit var recordingStatusText: TextView
-
-
-
 
     // Recording Management
     private lateinit var audioManager: AudioRecordingManager
@@ -73,13 +73,28 @@ class MainActivity : AppCompatActivity() {
         var customTitle: String = ""
     )
 
-
-
+    // Tape logo selector launcher for activity result
+    private val selectLogoLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val selectedLogoResId = result.data?.getIntExtra("selected_logo", -1) ?: -1
+            if (selectedLogoResId != -1) {
+                tapeLogoImageView.setImageResource(selectedLogoResId)
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // Tape logo logic: initialize tapeLogoImageView and brushIcon click
+        tapeLogoImageView = findViewById(R.id.tapeLogo)
+        findViewById<ImageView>(R.id.brushIcon).setOnClickListener {
+            val intent = Intent(this, TapeDesignsActivity::class.java)
+            selectLogoLauncher.launch(intent)
+        }
 
         initializeComponents()
         setupUI()
@@ -93,12 +108,10 @@ class MainActivity : AppCompatActivity() {
 
         // Start the periodic button pulsing
         startButtonAnimations()
-
     }
 
     private fun initializeComponents() {
         // Initialize UI components
-        logoImageView = findViewById(R.id.tapeLogo)
         dateButton = findViewById(R.id.dateButton)
         recordButton = findViewById(R.id.recordButton)
         recordingsList = findViewById(R.id.recordingsList)
@@ -323,7 +336,6 @@ class MainActivity : AppCompatActivity() {
                     cal.get(Calendar.DAY_OF_MONTH)
                 )
         }
-
 
         recordButton.isEnabled = selectedDate.isNotEmpty()
 
@@ -600,7 +612,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         infoLayout.addView(nameText)
-
 
         // Edit button (optional - you can also just tap the title)
         val editButton = ImageButton(this).apply {

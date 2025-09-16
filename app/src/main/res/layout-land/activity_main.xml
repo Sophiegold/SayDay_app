@@ -117,6 +117,23 @@
         app:layout_constraintStart_toStartOf="@id/recordButton"
         app:layout_constraintEnd_toEndOf="@id/recordButton" />
 
+
+    <!-- Edit btn -->
+    <ImageView
+        android:id="@+id/brushIcon"
+        android:translationY="-22dp"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:contentDescription="@string/edit_view"
+        android:src="@drawable/ic_brush"
+        app:layout_constraintBottom_toBottomOf="@+id/tapeLogo"
+        app:layout_constraintStart_toStartOf="@id/dateButton" />
+
+
+
+
+
+
     <!-- Recordings list -->
     <ScrollView
         android:id="@+id/recordingsScroll"

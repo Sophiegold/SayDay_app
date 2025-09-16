@@ -12,4 +12,6 @@
     <string name="recordings_list">recordings list</string>
     <string name="logo_small">logo_small</string>
     <string name="bg_stripes">bg_stripes</string>
+    <string name="edit_view">edit_view</string>
+    <string name="tape_logo" />
 </resources>
