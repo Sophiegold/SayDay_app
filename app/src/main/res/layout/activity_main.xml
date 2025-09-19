@@ -61,9 +61,9 @@
     <EditText
         android:id="@+id/dayTitle"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="50dp"
         android:layout_marginStart="18dp"
-        android:translationY="25dp"
+        android:translationY="19dp"
         android:autofillHints="name"
         android:drawableEnd="@drawable/ic_pencil"
         android:ellipsize="none"
@@ -78,7 +78,7 @@
         app:layout_constraintStart_toEndOf="@id/dateButton"
         app:layout_constraintTop_toTopOf="@id/dateButton"
         app:layout_constraintWidth_percent="0.48"
-        app:layout_constraintHeight_percent="0.07"/>
+        app:layout_constraintHeight_percent="0.17"/>
 
     <!-- Record Button -->
     <ImageButton
@@ -134,6 +134,7 @@
     <!-- Recordings list below (portrait) -->
     <ScrollView
         android:id="@+id/recordingsScroll"
+        android:contentDescription="@string/recordings_list"
         android:background="@drawable/notepaper"
         android:layout_width="0dp"
         android:layout_height="0dp"
