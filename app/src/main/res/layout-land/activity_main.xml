@@ -46,28 +46,29 @@
         android:minLines="3"
         android:maxLines="3"
         android:fontFamily="@font/permanent_marker"
-        android:textSize="19sp"
+        android:textSize="16sp"
         app:layout_constraintWidth_percent="0.17"
         app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="@id/tapeLogo"
         app:layout_constraintEnd_toEndOf="@id/dayTitle"
         app:layout_constraintBottom_toBottomOf="@id/tapeLogo"
-        app:layout_constraintHorizontal_bias="0.1"
-        app:layout_constraintVertical_bias="0.24"/>
+        app:layout_constraintHorizontal_bias="0.075"
+        app:layout_constraintVertical_bias="0.23"/>
 
     <!-- Day Title EditText -->
     <EditText
         android:id="@+id/dayTitle"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="53dp"
+        android:layout_marginStart="10dp"
+        android:translationY="40dp"
         android:autofillHints="name"
         android:drawableEnd="@drawable/ic_pencil"
         android:drawablePadding="4dp"
         android:fontFamily="@font/playpen_medium"
         android:gravity="top|start"
+        android:textColorHint="#A07C11"
         android:hint="@string/my_day"
         android:inputType="textCapSentences"
         android:singleLine="true"
@@ -121,11 +122,12 @@
     <!-- Edit btn -->
     <ImageView
         android:id="@+id/brushIcon"
-        android:translationY="-22dp"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
+        android:translationY="-28dp"
+        android:translationX="-5dp"
+        android:layout_width="37dp"
+        android:layout_height="37dp"
         android:contentDescription="@string/edit_view"
-        android:src="@drawable/ic_brush"
+        android:src="@drawable/des_button"
         app:layout_constraintBottom_toBottomOf="@+id/tapeLogo"
         app:layout_constraintStart_toStartOf="@id/dateButton" />
 
@@ -138,7 +140,7 @@
     <ScrollView
         android:id="@+id/recordingsScroll"
         android:contentDescription="@string/recordings_list"
-        android:background="@drawable/recs_paper"
+        android:background="@drawable/notepaper"
         android:padding="6dp"
         android:layout_width="0dp"
         android:layout_height="0dp"

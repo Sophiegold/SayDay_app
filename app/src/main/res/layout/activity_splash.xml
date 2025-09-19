@@ -20,7 +20,7 @@
         android:layout_height="wrap_content"
         android:contentDescription="@string/app_logo"
         android:scaleType="centerInside"
-        android:src="@drawable/intro_img"
+        android:src="@drawable/taia"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
@@ -33,17 +33,15 @@
         android:fontFamily="@font/playpen_medium"
         android:gravity="center"
         android:text="@string/record_your_day"
-        android:textColor="#256678"
-        android:textSize="35sp"
-
+        android:textColor="#010A0F"
+        android:textSize="38sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.68"
-
+        app:layout_constraintHorizontal_bias="0.6"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.42" />
+        app:layout_constraintVertical_bias="0.36" />
 
     <!-- Tagline Text over the Image -->
     <TextView
@@ -51,12 +49,13 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/record_your_day_tagline"
+        android:background="#D3000000"
         android:textSize="17sp"
         android:textColor="@color/splash_subtitle_color"
         android:fontFamily="@font/playpen"
         android:alpha="0.8"
-        android:layout_marginTop="95dp"
-        android:layout_marginEnd="80dp"
+        android:layout_marginTop="30dp"
+        android:layout_marginEnd="30dp"
         app:layout_constraintTop_toBottomOf="@id/appNameText"
         app:layout_constraintStart_toStartOf="@id/appNameText"
         app:layout_constraintEnd_toEndOf="@id/appNameText"/>
@@ -67,7 +66,7 @@
         style="?android:attr/progressBarStyle"
         android:layout_width="66dp"
         android:layout_height="61dp"
-        android:layout_marginTop="40dp"
+        android:layout_marginTop="100dp"
         android:indeterminateTint="@color/splash_accent_color"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

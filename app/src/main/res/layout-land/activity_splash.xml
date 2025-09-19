@@ -20,7 +20,7 @@
         android:layout_height="wrap_content"
         android:contentDescription="@string/app_logo"
         android:scaleType="centerInside"
-        android:src="@drawable/intro_img"
+        android:src="@drawable/taia"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
@@ -35,23 +35,23 @@
         android:fontFamily="@font/playpen_medium"
         android:gravity="center"
         android:text="@string/record_your_day"
-        android:textColor="#256678"
+        android:textColor="#010A0F"
         android:textSize="38sp"
         android:textStyle="bold"
-
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.6"
         app:layout_constraintStart_toStartOf="parent"
 
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.26" />
+        app:layout_constraintVertical_bias="0.22" />
 
     <TextView
         android:id="@+id/taglineText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/record_your_day_tagline"
+        android:background="#D5000000"
         android:textSize="17sp"
         android:textColor="@color/splash_subtitle_color"
         android:fontFamily="@font/playpen"

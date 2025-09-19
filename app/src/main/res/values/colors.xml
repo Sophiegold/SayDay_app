@@ -20,4 +20,13 @@
     <color name="splash_text_color_light">#FF1A1A2E</color>
     <color name="splash_subtitle_color_light">#FF6C757D</color>
     <color name="splash_accent_color_light">#FF007BFF</color>
+
+
+    <color name="colorTaia">#040000</color>
+    <color name="colorChin">#FFC107</color>
+    <color name="colorTuti">#2E0B03</color>
+    <color name="colorSea">#6AFBEF</color>
+    <color name="colorUfo">#B4FB10</color>
+    <color name="defaultDayTitleColor">#070000</color>
+
 </resources>

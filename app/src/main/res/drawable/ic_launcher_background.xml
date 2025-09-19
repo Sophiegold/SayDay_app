@@ -16,7 +16,7 @@
 
     <!-- Stripe 3 -->
     <path
-        android:fillColor="#F0232C"
+        android:fillColor="#FC3F01"
         android:pathData="M80,0 L120,0 L120,200 L80,200 Z" />
 
     <!-- Stripe 4 -->

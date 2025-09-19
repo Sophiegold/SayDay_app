@@ -54,7 +54,7 @@
         app:layout_constraintHorizontal_bias="0.10"
         app:layout_constraintStart_toStartOf="@id/tapeLogo"
         app:layout_constraintTop_toTopOf="@id/tapeLogo"
-        app:layout_constraintVertical_bias="0.19"
+        app:layout_constraintVertical_bias="0.21"
         app:layout_constraintWidth_percent="0.25" />
 
     <!-- Day Title EditText with pencil -->
@@ -63,7 +63,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="18dp"
-        android:layout_marginTop="20dp"
+        android:translationY="25dp"
         android:autofillHints="name"
         android:drawableEnd="@drawable/ic_pencil"
         android:ellipsize="none"
@@ -71,8 +71,9 @@
         android:gravity="center_vertical|start"
         android:inputType="textCapSentences|textMultiLine"
         android:hint="@string/my_day"
+        android:textColorHint="#A07C11"
         android:drawablePadding="4dp"
-        android:textColor="@android:color/black"
+        android:textColor="@color/white"
         android:textSize="15sp"
         app:layout_constraintStart_toEndOf="@id/dateButton"
         app:layout_constraintTop_toTopOf="@id/dateButton"
@@ -118,11 +119,12 @@
     <!-- Edit btn -->
     <ImageView
         android:id="@+id/brushIcon"
-        android:translationY="-22dp"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
+        android:translationY="-20dp"
+        android:translationX="-15dp"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
         android:contentDescription="@string/edit_view"
-        android:src="@drawable/ic_brush"
+        android:src="@drawable/des_button"
         app:layout_constraintBottom_toBottomOf="@+id/tapeLogo"
         app:layout_constraintStart_toStartOf="@id/dateButton" />
 
@@ -132,7 +134,7 @@
     <!-- Recordings list below (portrait) -->
     <ScrollView
         android:id="@+id/recordingsScroll"
-        android:background="@drawable/recs_paper"
+        android:background="@drawable/notepaper"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:fillViewport="true"

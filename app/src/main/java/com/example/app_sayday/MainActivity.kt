@@ -62,7 +62,9 @@ class MainActivity : AppCompatActivity() {
         private const val RECORDINGS_KEY = "recordings_data"
         private const val DAY_TITLES_KEY = "day_titles_data"
         private const val SELECTED_DATE_KEY = "selected_date"
-        private const val MAX_RECORDING_DURATION = 2_400_000L // 40 minutes
+        private const val TAPE_LOGO_KEY = "selected_tape_logo"
+        private const val MAX_RECORDING_DURATION = 2_400_000L
+        private const val SELECTED_DAYTITLE_COLOR_KEY = "selected_daytitle_color"
     }
 
     data class RecordingInfo(
@@ -73,6 +75,14 @@ class MainActivity : AppCompatActivity() {
         var customTitle: String = ""
     )
 
+    private val logoToColorMap = mapOf(
+        R.drawable.taia to R.color.colorTaia,
+        R.drawable.des_chin to R.color.colorChin,
+        R.drawable.des_tuti to R.color.colorTuti,
+        R.drawable.des_sea to R.color.colorSea,
+        R.drawable.des_ufo to R.color.colorUfo
+    )
+
     // Tape logo selector launcher for activity result
     private val selectLogoLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -81,6 +91,20 @@ class MainActivity : AppCompatActivity() {
             val selectedLogoResId = result.data?.getIntExtra("selected_logo", -1) ?: -1
             if (selectedLogoResId != -1) {
                 tapeLogoImageView.setImageResource(selectedLogoResId)
+                // Save selection for persistence
+                getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+                    .edit()
+                    .putInt(TAPE_LOGO_KEY, selectedLogoResId)
+                    .apply()
+
+                // Change the color of dayTitle text
+                val colorResId = logoToColorMap[selectedLogoResId] ?: R.color.defaultDayTitleColor
+                dayTitle.setTextColor(ContextCompat.getColor(this, colorResId))
+                // Save selected color for persistence
+                getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+                    .edit()
+                    .putInt(SELECTED_DAYTITLE_COLOR_KEY, colorResId)
+                    .apply()
             }
         }
     }
@@ -89,14 +113,23 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Tape logo logic: initialize tapeLogoImageView and brushIcon click
         tapeLogoImageView = findViewById(R.id.tapeLogo)
-        findViewById<ImageView>(R.id.brushIcon).setOnClickListener {
+        // Restore the saved tape logo on app launch, default to logo1 if not set
+        val savedLogoResId = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+            .getInt(TAPE_LOGO_KEY, R.drawable.taia)
+        tapeLogoImageView.setImageResource(savedLogoResId)
+
+        findViewById<ImageView>(R.id.brushIcon)?.setOnClickListener {
             val intent = Intent(this, TapeDesignsActivity::class.java)
             selectLogoLauncher.launch(intent)
         }
 
         initializeComponents()
+
+        val savedDayTitleColorResId = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+            .getInt(SELECTED_DAYTITLE_COLOR_KEY, R.color.defaultDayTitleColor)
+        dayTitle.setTextColor(ContextCompat.getColor(this, savedDayTitleColorResId))
+
         setupUI()
         loadData()
         checkPermissions()
