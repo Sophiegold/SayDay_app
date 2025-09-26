@@ -1,4 +1,4 @@
-package com.example.app_sayday.com.example.app_sayday
+package com.sophiegold.app_sayday.com.sophiegold.app_sayday
 
 import android.content.Intent
 import android.os.Bundle
@@ -8,8 +8,8 @@ import android.view.animation.AnimationUtils
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import com.example.app_sayday.MainActivity
-import com.example.app_sayday.R
+import com.sophiegold.app_sayday.MainActivity
+import com.sophiegold.app_sayday.R
 
 class SplashActivity : AppCompatActivity() {
 

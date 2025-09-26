@@ -1,4 +1,4 @@
-package com.example.app_sayday
+package com.sophiegold.app_sayday
 
 import android.app.Activity
 import android.content.Context
@@ -593,6 +593,7 @@ class MainActivity : AppCompatActivity() {
                 setPadding(16, 24, 16, 24)
                 gravity = android.view.Gravity.CENTER
                 setTextColor(ContextCompat.getColor(this@MainActivity, android.R.color.darker_gray))
+                typeface = ResourcesCompat.getFont(this@MainActivity, R.font.playpen_medium)
             }
             recordingsList.addView(noText)
             return

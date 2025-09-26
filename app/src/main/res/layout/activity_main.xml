@@ -39,7 +39,7 @@
         android:clickable="true"
         android:ellipsize="none"
         android:focusable="true"
-        android:fontFamily="@font/permanent_marker"
+        android:fontFamily="@font/playpen_medium"
         android:gravity="center"
         android:lines="3"
         android:maxLines="3"

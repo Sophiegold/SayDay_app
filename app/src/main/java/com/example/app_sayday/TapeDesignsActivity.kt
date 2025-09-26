@@ -1,4 +1,4 @@
-package com.example.app_sayday
+package com.sophiegold.app_sayday
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle

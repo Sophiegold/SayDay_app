@@ -1,4 +1,4 @@
-package com.example.app_sayday
+package com.sophiegold.app_sayday
 
 
 import android.content.Context
