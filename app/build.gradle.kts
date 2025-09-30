@@ -12,8 +12,8 @@ android {
         applicationId = "com.sophiegold.app_sayday"
         minSdk = 24
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.2"
+        versionCode = 6
+        versionName = "1.2.4"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -36,6 +36,7 @@ android {
 }
 
 dependencies {
+    implementation("com.google.android.material:material:1.10.0")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
@@ -51,6 +52,7 @@ dependencies {
     implementation("androidx.dynamicanimation:dynamicanimation:1.0.0")
 // If you want to use Lottie animations for more advanced splash screens
     implementation("com.airbnb.android:lottie:6.1.0")
+    implementation("com.google.code.gson:gson:2.10.1")
     implementation(libs.glide)
     kapt(libs.glide.compiler)
 }

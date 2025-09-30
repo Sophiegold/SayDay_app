@@ -1,37 +1,51 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-
     xmlns:tools="http://schemas.android.com/tools"
-
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/bg_app3">
 
+    <!-- TOP APP BAR / TOOLBAR AT THE VERY TOP -->
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/topAppBar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@color/black"
+        android:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar"
+        app:title="SayDay"
+        app:navigationIcon="@drawable/ic_menu"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <!-- Stripes background on the left -->
     <ImageView
         android:layout_width="120dp"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
         android:background="@drawable/ic_launcher_background"
-        android:contentDescription="@string/bg_stripes"
         android:translationX="8dp"
-
+        app:layout_constraintTop_toBottomOf="@id/topAppBar"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:contentDescription="@string/bg_stripes"
         tools:ignore="MissingConstraints" />
 
-    <!-- Date button over the tape -->
+    <!-- Tape Logo BELOW the toolbar -->
     <ImageView
-        android:paddingTop="12dp"
         android:id="@+id/tapeLogo"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:adjustViewBounds="true"
         android:contentDescription="@string/logo"
+        android:paddingTop="12dp"
         android:scaleType="fitCenter"
         android:src="@drawable/taia"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/topAppBar" />
 
+    <!-- Date Button -->
     <TextView
         android:id="@+id/dateButton"
         android:layout_width="0dp"
@@ -51,17 +65,36 @@
         android:textColor="@color/highlight_text_color"
         app:layout_constraintBottom_toBottomOf="@id/tapeLogo"
         app:layout_constraintEnd_toEndOf="@id/tapeLogo"
-        app:layout_constraintHorizontal_bias="0.10"
+        app:layout_constraintHorizontal_bias="0.07"
         app:layout_constraintStart_toStartOf="@id/tapeLogo"
         app:layout_constraintTop_toTopOf="@id/tapeLogo"
         app:layout_constraintVertical_bias="0.21"
-        app:layout_constraintWidth_percent="0.25" />
+        app:layout_constraintWidth_percent="0.26" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="25dp"
+        android:paddingTop="5dp"
+        android:paddingBottom="5dp"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:text="@string/pick_a_day"
+        android:background="@color/black"
+        android:gravity="center"
+        android:textSize="12sp"
+        android:textColor="@color/white"
+        app:layout_constraintBottom_toTopOf="@id/dateButton"
+        app:layout_constraintStart_toStartOf="@id/dateButton"
+        app:layout_constraintEnd_toEndOf="@id/dateButton"
+        android:translationY="-2dp"
+        android:translationX="5dp"
+        android:rotation="4"/>
 
-    <!-- Day Title EditText with pencil -->
+    <!-- Day Title EditText -->
     <EditText
         android:id="@+id/dayTitle"
         android:layout_width="0dp"
-        android:layout_height="50dp"
+        android:maxLength="17"
+        android:layout_height="47dp"
         android:layout_marginStart="18dp"
         android:translationY="19dp"
         android:autofillHints="name"
@@ -71,13 +104,12 @@
         android:gravity="center_vertical|start"
         android:inputType="textCapSentences|textMultiLine"
         android:hint="@string/my_day"
-        android:textColorHint="#A07C11"
         android:drawablePadding="4dp"
-        android:textColor="@color/white"
+
         android:textSize="15sp"
         app:layout_constraintStart_toEndOf="@id/dateButton"
         app:layout_constraintTop_toTopOf="@id/dateButton"
-        app:layout_constraintWidth_percent="0.48"
+        app:layout_constraintWidth_percent="0.54"
         app:layout_constraintHeight_percent="0.17"/>
 
     <!-- Record Button -->
@@ -95,10 +127,23 @@
         app:layout_constraintStart_toStartOf="@id/tapeLogo"
         app:layout_constraintWidth_percent="0.25"
         app:layout_constraintDimensionRatio="1:1"
-
         app:tint="@android:color/white" />
 
-    <!-- Recording Status Text (NEW) -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="25dp"
+        android:padding="5dp"
+        android:text="@string/RECORD"
+        android:background="@color/black"
+        android:gravity="center"
+        android:textSize="12sp"
+        android:textColor="@color/white"
+        app:layout_constraintBottom_toTopOf="@id/recordButton"
+        app:layout_constraintStart_toStartOf="@id/recordButton"
+        app:layout_constraintEnd_toEndOf="@id/recordButton"
+        android:translationY="10dp"/>
+
+    <!-- Recording Status Text -->
     <TextView
         android:id="@+id/recordingStatusText"
         android:layout_width="wrap_content"
@@ -106,32 +151,44 @@
         android:layout_marginTop="8dp"
         android:text=""
         android:textColor="@color/purple_500"
-        android:textSize="14sp"
-        android:fontFamily="@font/permanent_marker"
+        android:textSize="13sp"
+        android:fontFamily="@font/playpen_medium"
         android:gravity="center"
         android:visibility="gone"
         app:layout_constraintTop_toBottomOf="@id/recordButton"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-
-
-    <!-- Edit btn -->
+    <!-- Brush/Edit Icon -->
     <ImageView
         android:id="@+id/brushIcon"
-        android:translationY="-20dp"
-        android:translationX="-15dp"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
+        android:translationY="-18dp"
+        android:translationX="10dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
         android:contentDescription="@string/edit_view"
         android:src="@drawable/des_button"
+        android:padding="3dp"
         app:layout_constraintBottom_toBottomOf="@+id/tapeLogo"
         app:layout_constraintStart_toStartOf="@id/dateButton" />
 
+    <!-- Birthday Cake Icon (selectable) -->
+    <ImageView
+        android:id="@+id/check_Bday"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:translationY="-20dp"
+        android:translationX="18dp"
+        android:src="@drawable/ic_cake_l"
+        android:contentDescription="@string/birthday"
+        android:clickable="true"
+        android:focusable="true"
+        app:layout_constraintBottom_toBottomOf="@id/brushIcon"
+        app:layout_constraintStart_toEndOf="@id/brushIcon"
+        android:layout_marginTop="0dp"
+        android:layout_marginStart="0dp"/>
 
-
-
-    <!-- Recordings list below (portrait) -->
+    <!-- Recordings List (ScrollView) -->
     <ScrollView
         android:id="@+id/recordingsScroll"
         android:contentDescription="@string/recordings_list"
@@ -146,49 +203,123 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHeight_default="percent"
-        app:layout_constraintHeight_percent="0.55">
+        app:layout_constraintHeight_percent="0.45">
 
-        <LinearLayout
-            android:id="@+id/recordingsList"
-            android:layout_marginTop="8dp"
-            android:fontFamily="@font/permanent_marker"
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/recordingsContent"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:scrollbars="vertical"
-            android:fadingEdge="none"
-            android:padding="8dp"/>
+            android:layout_height="wrap_content">
+
+            <!-- Recordings container (vertical) -->
+            <LinearLayout
+                android:id="@+id/recordingsList"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:fontFamily="@font/permanent_marker"
+                android:orientation="vertical"
+                android:scrollbars="vertical"
+                android:fadingEdge="none"
+                android:padding="8dp"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"/>
+
+            <!-- Image block always anchored to bottom -->
+            <FrameLayout
+                android:id="@+id/myImage"
+                android:layout_width="200dp"
+                android:layout_height="180dp"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/recordingsList"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintDimensionRatio="558:449">
+
+                <!-- Full frame image, cropped to fit -->
+                <ImageView
+                    android:id="@+id/myImageView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:scaleType="fitCenter" />
+
+
+
+                <!-- Overlay icon, positioned top-right -->
+                <ImageButton
+                    android:id="@+id/minusIcon"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:background="@drawable/ic_remove"
+                    android:layout_gravity="top|end"
+                    android:visibility="visible"
+                    android:contentDescription="@string/delete_image"
+                    android:elevation="6dp"
+                    android:padding="8dp"
+                    app:tint="@android:color/white" />
+            </FrameLayout>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
     </ScrollView>
 
-    <ImageView
-        android:layout_width="0dp"
+    <!-- + Button for adding image, right corner above recordings list -->
+    <ImageButton
+        android:id="@+id/addImageButton"
+        android:layout_width="50dp"
         android:layout_height="50dp"
-        android:contentDescription="@string/logo_small"
-        android:src="@drawable/sayday_logo"
-        app:layout_constraintStart_toEndOf="@id/dateButton"
-        app:layout_constraintTop_toTopOf="parent"
-        android:layout_marginStart="30dp"
-        tools:ignore="MissingConstraints"
-        app:layout_constraintWidth_percent="0.35"/>
+        android:src="@drawable/ic_add"
+        android:contentDescription="@string/add_image"
+        android:layout_marginEnd="20dp"
+        android:layout_marginTop="50dp"
+        app:layout_constraintBottom_toBottomOf="@id/recordingsScroll"
+        app:layout_constraintStart_toStartOf="@id/recordingsScroll"
+        android:background="?selectableItemBackgroundBorderless" />
 
-    <!-- Calendar Picker Container with MaterialCalendarView -->
+
+
+    <!-- Calendar Picker Container with top bar for close button -->
     <LinearLayout
         android:id="@+id/calendarContainer"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:visibility="gone"
-        android:background="#FFFFFF"
+        android:background="@color/white"
         app:layout_constraintTop_toBottomOf="@id/dateButton"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Top bar with space and close button -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:orientation="horizontal"
+            android:gravity="end|center_vertical">
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"/>
+
+            <ImageView
+                android:id="@+id/calendarClose"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:src="@drawable/ic_close"
+                android:contentDescription="@string/close_calendar"
+                android:padding="8dp"
+                android:background="?selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                app:tint="@color/highlight_text_color"
+                android:tooltipText="@string/mark_birthday"/>
+        </LinearLayout>
 
         <com.prolificinteractive.materialcalendarview.MaterialCalendarView
             android:id="@+id/materialCalendarView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"/>
     </LinearLayout>
-
-
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -44,19 +44,19 @@
     <!-- Tagline Text over the Image -->
     <TextView
         android:id="@+id/taglineText"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/record_your_day_tagline"
-        android:background="#D3000000"
-        android:textSize="17sp"
-        android:textColor="@color/splash_subtitle_color"
-        android:fontFamily="@font/playpen"
-        android:alpha="0.8"
         android:layout_marginTop="30dp"
-        android:layout_marginEnd="30dp"
-        app:layout_constraintTop_toBottomOf="@id/appNameText"
-        app:layout_constraintStart_toStartOf="@id/appNameText"
-        app:layout_constraintEnd_toEndOf="@id/appNameText"/>
+        android:gravity="center"
+        android:alpha="0.8"
+        android:background="#D3000000"
+        android:fontFamily="@font/playpen"
+        android:text="@string/record_your_day_tagline"
+        android:textColor="@color/splash_subtitle_color"
+        android:textSize="17sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/appNameText" />
 
     <!-- Loading Indicator -->
     <ProgressBar
@@ -118,6 +118,9 @@
             android:textColor="@color/white"
             android:layout_marginStart="8dp"/>
     </LinearLayout>
+
+    <androidx.constraintlayout.widget.Guideline android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

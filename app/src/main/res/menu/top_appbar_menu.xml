@@ -1,0 +1,19 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/menu_about"
+        android:title="@string/about"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/menu_howto"
+        android:title="@string/how_to"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/menu_archive"
+        android:title="@string/archive_my_sayday"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/menu_rate"
+        android:title="@string/rate_sayday"
+        app:showAsAction="never" />
+</menu>

@@ -14,4 +14,17 @@
     <string name="bg_stripes">bg_stripes</string>
     <string name="edit_view">edit_view</string>
     <string name="tape_logo" />
+    <string name="birthday" />
+    <string name="close_calendar" />
+    <string name="mark_birthday">Mark Birthday</string>
+    <string name="add_image">add image</string>
+    <string name="delete_image" />
+    <string name="add_image_label">Add Image</string>
+    <string name="image_border" />
+    <string name="stamp_border">Stamp border</string>
+    <string name="RECORD">Record</string>
+    <string name="rate_sayday">Rate SayDay</string>
+    <string name="archive_my_sayday">Archive My SayDay</string>
+    <string name="how_to">How It Works</string>
+    <string name="about">About SayDay</string>
 </resources>

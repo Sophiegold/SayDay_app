@@ -48,19 +48,18 @@
 
     <TextView
         android:id="@+id/taglineText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
         android:text="@string/record_your_day_tagline"
         android:background="#D5000000"
         android:textSize="17sp"
         android:textColor="@color/splash_subtitle_color"
         android:fontFamily="@font/playpen"
-
-        android:layout_marginTop="128dp"
-        android:layout_marginEnd="80dp"
+        android:layout_marginTop="55dp"
+        android:gravity="center"
         app:layout_constraintTop_toBottomOf="@id/appNameText"
-        app:layout_constraintStart_toStartOf="@id/appNameText"
-        app:layout_constraintEnd_toEndOf="@id/appNameText"/>
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
 
     <!-- Loading Indicator -->
     <ProgressBar
