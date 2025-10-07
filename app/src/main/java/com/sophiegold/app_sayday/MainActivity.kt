@@ -1,5 +1,11 @@
 package com.sophiegold.app_sayday
 
+
+import android.graphics.Bitmap
+import android.graphics.Matrix
+import android.net.Uri
+import android.provider.MediaStore
+import androidx.exifinterface.media.ExifInterface
 import androidx.core.content.FileProvider
 import java.io.*
 import java.util.zip.ZipEntry
@@ -11,7 +17,6 @@ import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.media.MediaPlayer
-import android.net.Uri
 import android.os.*
 import android.util.Log
 import android.view.Gravity
@@ -45,6 +50,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tapeLogoImageView: ImageView
     private lateinit var dateButton: TextView
     private lateinit var recordButton: ImageButton
+
+    private lateinit var recordButton_lbl: TextView
     private lateinit var recordingsList: LinearLayout
     private lateinit var dayTitle: EditText
     private lateinit var recordingsScroll: ScrollView
@@ -98,6 +105,28 @@ class MainActivity : AppCompatActivity() {
         R.drawable.des_ufo to R.color.colorUfo
     )
 
+    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        Log.d("ImagePicker", "Received URI: $uri")
+        if (uri != null) {
+            try {
+                contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            } catch (e: SecurityException) {
+                Log.w("ImagePicker", "Persist permission failed: ${e.message}")
+            }
+            val mimeType = contentResolver.getType(uri)
+            Log.d("ImagePicker", "MIME type: $mimeType")
+            if (mimeType?.startsWith("image/") == true) {
+                imageUrisByDate[selectedDate] = uri.toString()
+                saveImageUris()
+                updateMyImage()
+            } else {
+                Toast.makeText(this, "Selected file is not an image", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Toast.makeText(this, "No image selected", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     private val selectLogoLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -122,42 +151,35 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Image picker for gallery
-    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        Log.d("ImagePicker", "Received URI: $uri")
-        if (uri != null) {
-            try {
-                contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            } catch (e: SecurityException) {
-                Log.w("ImagePicker", "Persist permission failed: ${e.message}")
-            }
-            // Check MIME type
-            val mimeType = contentResolver.getType(uri)
-            Log.d("ImagePicker", "MIME type: $mimeType")
-            if (mimeType?.startsWith("image/") == true) {
-                try {
-                    val inputStream = contentResolver.openInputStream(uri)
-                    val bitmap = BitmapFactory.decodeStream(inputStream)
-                    inputStream?.close()
-                    Log.d("ImagePicker", "Bitmap loaded: ${bitmap != null}")
-                    if (bitmap != null) {
-                        // Good! Save and show as before
-                        imageUrisByDate[selectedDate] = uri.toString()
-                        saveImageUris()
-                        updateMyImage()
-                    } else {
-                        Toast.makeText(this, "Failed to load image from URI", Toast.LENGTH_SHORT).show()
-                    }
-                } catch (e: Exception) {
-                    Log.e("ImagePicker", "Error opening URI", e)
-                    Toast.makeText(this, "Error opening image", Toast.LENGTH_SHORT).show()
-                }
-            } else {
-                Toast.makeText(this, "Selected file is not an image", Toast.LENGTH_SHORT).show()
-            }
-        } else {
-            Toast.makeText(this, "No image selected", Toast.LENGTH_SHORT).show()
+
+
+
+
+    /**
+     * Loads a Bitmap from a URI and corrects its orientation using EXIF data, if needed.
+     */
+    fun getCorrectlyOrientedBitmap(context: Context, imageUri: Uri): Bitmap? {
+        val inputStream = context.contentResolver.openInputStream(imageUri) ?: return null
+        val bitmap = BitmapFactory.decodeStream(inputStream)
+        inputStream.close()
+        if (bitmap == null) return null
+
+        val exifInputStream = context.contentResolver.openInputStream(imageUri) ?: return bitmap
+        val exif = androidx.exifinterface.media.ExifInterface(exifInputStream)
+        val orientation = exif.getAttributeInt(
+            androidx.exifinterface.media.ExifInterface.TAG_ORIENTATION,
+            androidx.exifinterface.media.ExifInterface.ORIENTATION_NORMAL
+        )
+        exifInputStream.close()
+
+        val matrix = Matrix()
+        when (orientation) {
+            androidx.exifinterface.media.ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
+            androidx.exifinterface.media.ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
+            androidx.exifinterface.media.ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
+            else -> return bitmap
         }
+        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -176,7 +198,7 @@ class MainActivity : AppCompatActivity() {
             popup.setOnMenuItemClickListener { menuItem ->
                 when (menuItem.itemId) {
                     R.id.menu_about -> {
-                        Toast.makeText(this, "About clicked!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "", Toast.LENGTH_SHORT).show()
                         true
                     }
 
@@ -191,7 +213,7 @@ class MainActivity : AppCompatActivity() {
                         true
                     }
                     R.id.menu_rate -> {
-                        Toast.makeText(this, "Rate clicked!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "", Toast.LENGTH_SHORT).show()
                         true
                     }
                     else -> false
@@ -231,6 +253,7 @@ class MainActivity : AppCompatActivity() {
     private fun initializeComponents() {
         dateButton = findViewById(R.id.dateButton)
         recordButton = findViewById(R.id.recordButton)
+        recordButton_lbl = findViewById(R.id.recordButton_lbl)
         recordingsList = findViewById(R.id.recordingsList)
         dayTitle = findViewById(R.id.dayTitle)
         recordingsScroll = findViewById(R.id.recordingsScroll)
@@ -249,7 +272,8 @@ class MainActivity : AppCompatActivity() {
             if (selectedDate.isNotEmpty()) {
                 if (!bdayDates.contains(selectedDate)) {
                     bdayDates.add(selectedDate)
-                    Toast.makeText(this, "This day is marked as a Birthday!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this,
+                        getString(R.string.this_day_is_marked_as_a_birthday), Toast.LENGTH_SHORT).show()
                 } else {
                     bdayDates.remove(selectedDate)
                 }
@@ -275,14 +299,14 @@ class MainActivity : AppCompatActivity() {
         myImage.setOnClickListener {
             if (imageUrisByDate.containsKey(selectedDate)) {
                 AlertDialog.Builder(this)
-                    .setTitle("Delete Image")
-                    .setMessage("Are you sure you want to delete this image?")
-                    .setPositiveButton("Yes") { _, _ ->
+                    .setTitle(getString(R.string.delete_image_msg))
+                    .setMessage(getString(R.string.are_you_sure_you_want_to_delete_this_image))
+                    .setPositiveButton(getString(R.string.yes)) { _, _ ->
                         imageUrisByDate.remove(selectedDate)
                         saveImageUris()
                         updateMyImage()
                     }
-                    .setNegativeButton("No", null)
+                    .setNegativeButton(getString(R.string.no), null)
                     .show()
             }
         }
@@ -290,18 +314,19 @@ class MainActivity : AppCompatActivity() {
         minusIcon.setOnClickListener {
             if (imageUrisByDate.containsKey(selectedDate)) {
                 AlertDialog.Builder(this)
-                    .setTitle("Delete Image")
-                    .setMessage("Are you sure you want to delete this image?")
-                    .setPositiveButton("Yes") { _, _ ->
+                    .setTitle(getString(R.string.delete_image_msg))
+                    .setMessage(getString(R.string.are_you_sure_you_want_to_delete_this_image))
+                    .setPositiveButton(getString(R.string.yes)) { _, _ ->
                         imageUrisByDate.remove(selectedDate)
                         saveImageUris()
                         updateMyImage()
                     }
-                    .setNegativeButton("No", null)
+                    .setNegativeButton(getString(R.string.no), null)
                     .show()
             }
         }
     }
+
 
     private fun setupUI() {
         dateButton.setOnClickListener {
@@ -312,11 +337,15 @@ class MainActivity : AppCompatActivity() {
             handleDateSelection(date)
         }
 
+
+
         recordButton.setOnClickListener {
             if (audioManager.isRecording()) {
                 stopRecording()
+                recordButton_lbl.text = getString(R.string.RECORD)
             } else {
                 startRecording()
+                recordButton_lbl.text = getString(R.string.stop_rec)
             }
         }
 
@@ -399,7 +428,7 @@ class MainActivity : AppCompatActivity() {
         }
         val savedTitle = dayTitlesByDate[selectedDate] ?: ""
         dayTitle.setText(savedTitle)
-        dayTitle.hint = "Add a title here..."
+        dayTitle.hint = getString(R.string.add_title_hint)
     }
 
     private fun checkPermissions() {
@@ -431,9 +460,9 @@ class MainActivity : AppCompatActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == PERMISSION_REQUEST_CODE) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                showSuccess("Permission granted! You can now record audio and pick images.")
+                showSuccess(getString(R.string.permission_granted_you_can_now_record_audio_and_pick_images))
             } else {
-                showError("Audio and storage permissions are required for this app to work.")
+                showError(getString(R.string.audio_and_storage_permissions_are_required_for_this_app_to_work))
             }
         }
     }
@@ -613,20 +642,20 @@ class MainActivity : AppCompatActivity() {
     private fun showEditTitleDialog(recording: RecordingInfo) {
         val editText = EditText(this).apply {
             setText(recording.customTitle.ifEmpty {
-                recording.fileName.replace("recording_${selectedDate}_", "").replace(".3gp", "")
+                recording.fileName.replace("${getString(R.string.recording)}_${selectedDate}_", "").replace(".3gp", "")
             })
-            hint = "Enter recording title"
+            hint = (getString(R.string.edit_recording_title))
             setSingleLine(true)
             selectAll()
         }
         val dialog = AlertDialog.Builder(this)
-            .setTitle("Edit Recording Title")
+            .setTitle(getString(R.string.edit_recording_title))
             .setView(editText)
-            .setPositiveButton("Save") { _, _ ->
+            .setPositiveButton(getString(R.string.save)) { _, _ ->
                 val newTitle = editText.text.toString().trim()
                 updateRecordingTitle(recording, newTitle)
             }
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton(getString(R.string.cancel), null)
             .create()
         dialog.show()
         editText.requestFocus()
@@ -638,14 +667,14 @@ class MainActivity : AppCompatActivity() {
         recording.customTitle = newTitle
         updateRecordingsList()
         saveData()
-        showSuccess("Title updated successfully!")
+        showSuccess(getString(R.string.title_updated_successfully))
     }
 
     private fun startRecording() {
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO)
             != PackageManager.PERMISSION_GRANTED
         ) {
-            showError("Please grant audio recording permission")
+            showError(getString(R.string.please_grant_audio_recording_permission))
             checkPermissions()
             return
         }
@@ -670,13 +699,14 @@ class MainActivity : AppCompatActivity() {
 
     private fun generateFileName(): String {
         val timeFormat = SimpleDateFormat("HH-mm-ss", Locale.getDefault())
-        return "recording_${selectedDate}_${timeFormat.format(Date())}.3gp"
+        val recordingWord = getString(R.string.recording)
+        return "${recordingWord}_${selectedDate}_${timeFormat.format(Date())}.3gp"
     }
 
     private fun addNewRecording(filePath: String) {
         val file = File(filePath)
         if (!file.exists() || file.length() == 0L) {
-            showError("Recording file is invalid")
+            showError(getString(R.string.recording_file_is_invalid))
             return
         }
         val recording = RecordingInfo(
@@ -690,7 +720,7 @@ class MainActivity : AppCompatActivity() {
         updateRecordingsList()
         updateCalendarIndicators()
         saveData()
-        showSuccess("Recording saved successfully!")
+        showSuccess(getString(R.string.recording_saved_successfully))
     }
 
     private fun updateRecordingsList() {
@@ -698,7 +728,7 @@ class MainActivity : AppCompatActivity() {
         val todaysRecordings = recordingsByDate[selectedDate] ?: emptyList()
         if (todaysRecordings.isEmpty()) {
             val noText = TextView(this).apply {
-                text = "No recordings yet for this date"
+                text = context.getString(R.string.no_recordings_yet_for_this_date)
                 textSize = 16f
                 setPadding(16, 24, 16, 24)
                 gravity = Gravity.CENTER
@@ -731,7 +761,7 @@ class MainActivity : AppCompatActivity() {
         val displayTitle = recording.customTitle.ifEmpty {
             val dateFormat = SimpleDateFormat("MMM d, yyyy, HH:mm", Locale.getDefault())
             dateFormat.timeZone = localTimeZone
-            "Recording " + dateFormat.format(Date(recording.timestamp))
+            "${getString(R.string.recording)} " + dateFormat.format(Date(recording.timestamp))
         }
         val nameText = TextView(this).apply {
             text = displayTitle
@@ -798,12 +828,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun showDeleteConfirmation(recording: RecordingInfo) {
         AlertDialog.Builder(this)
-            .setTitle("Delete Recording")
-            .setMessage("Are you sure you want to delete this recording? This action cannot be undone.")
-            .setPositiveButton("Delete") { _, _ ->
+            .setTitle(getString(R.string.delete_recording))
+            .setMessage(getString(R.string.are_you_sure_you_want_to_delete_this_recording_this_action_cannot_be_undone))
+            .setPositiveButton(getString(R.string.delete)) { _, _ ->
                 deleteRecording(recording)
             }
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton(getString(R.string.cancel_btn), null)
             .show()
     }
 
@@ -820,9 +850,9 @@ class MainActivity : AppCompatActivity() {
                     updateRecordingsList()
                     updateCalendarIndicators()
                     saveData()
-                    showSuccess("Recording deleted")
+                    showSuccess(getString(R.string.recording_deleted))
                 } else {
-                    showError("Failed to delete recording")
+                    showError(getString(R.string.failed_to_delete_recording))
                 }
             }
         }
@@ -834,7 +864,7 @@ class MainActivity : AppCompatActivity() {
                 .asGif()
                 .load(R.drawable.red_blink)
                 .into(recordButton)
-            recordingStatusText.text = "Recording..."
+            recordingStatusText.text = getString(R.string.recording_to_progress)
             recordingStatusText.visibility = View.VISIBLE
         } else {
             recordButton.setImageDrawable(null)
@@ -862,7 +892,7 @@ class MainActivity : AppCompatActivity() {
                         val minutes = seconds / 60
                         val secs = seconds % 60
                         recordingStatusText.text =
-                            "Recording... ${minutes}:${String.format("%02d", secs)}"
+                            "${getString(R.string.recording_progress)}_${minutes}:${String.format("%02d", secs)}"
                     }
                 }
             }, 1000, 1000)
@@ -939,20 +969,21 @@ class MainActivity : AppCompatActivity() {
         )
 
         AlertDialog.Builder(context)
-            .setTitle("Archive Created")
-            .setMessage("Your recordings have been archived. What would you like to do?")
-            .setPositiveButton("Open Location") { _, _ ->
+            .setTitle(getString(R.string.archive_created))
+            .setMessage(getString(R.string.your_recordings_have_been_archived_what_would_you_like_to_do))
+            .setPositiveButton(getString(R.string.open_location)) { _, _ ->
                 val intent = Intent(Intent.ACTION_VIEW).apply {
                     setDataAndType(zipUri, "application/zip")
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
                 try {
-                    context.startActivity(Intent.createChooser(intent, "Open with"))
+                    context.startActivity(Intent.createChooser(intent, getString(R.string.open_with)))
                 } catch (e: Exception) {
-                    Toast.makeText(context, "No app found to open ZIP file.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context,
+                        getString(R.string.no_app_found_to_open_zip_file), Toast.LENGTH_SHORT).show()
                 }
             }
-            .setNegativeButton("Share ZIP") { _, _ ->
+            .setNegativeButton(getString(R.string.share_zip)) { _, _ ->
                 val shareIntent = Intent(Intent.ACTION_SEND).apply {
                     type = "application/zip"
                     putExtra(Intent.EXTRA_STREAM, zipUri)
@@ -964,7 +995,7 @@ class MainActivity : AppCompatActivity() {
                     Toast.makeText(context, "No app found to share ZIP.", Toast.LENGTH_SHORT).show()
                 }
             }
-            .setNeutralButton("Close", null)
+            .setNeutralButton(getString(R.string.close), null)
             .show()
     }
 
@@ -1043,7 +1074,6 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-
     private fun updateMyImage() {
         val uriStr = imageUrisByDate[selectedDate]
         val myImage = findViewById<FrameLayout>(R.id.myImage)
@@ -1052,9 +1082,7 @@ class MainActivity : AppCompatActivity() {
         if (uriStr != null) {
             val uri = Uri.parse(uriStr)
             try {
-                val inputStream = contentResolver.openInputStream(uri)
-                val bitmap = BitmapFactory.decodeStream(inputStream)
-                inputStream?.close()
+                val bitmap = getCorrectlyOrientedBitmap(this, uri)
                 if (bitmap != null) {
                     myImageView.setImageBitmap(bitmap)
                     myImage.visibility = View.VISIBLE
@@ -1092,16 +1120,15 @@ class MainActivity : AppCompatActivity() {
             myImageView.setImageDrawable(null)
         }
     }
-}
 
-// Decorators for calendar dots and birthdays
-class BirthdayDecorator(
-    private val context: Context,
-    private val dates: Collection<CalendarDay>
-) : DayViewDecorator {
-    override fun shouldDecorate(day: CalendarDay): Boolean = dates.contains(day)
-    override fun decorate(view: DayViewFacade) {
-        view.setSelectionDrawable(ContextCompat.getDrawable(context, R.drawable.ic_cake_l)!!)
-    }
-}
+    // Decorators for calendar dots and birthdays
+    class BirthdayDecorator(
+        private val context: Context,
+        private val dates: Collection<CalendarDay>
+    ) : DayViewDecorator {
+        override fun shouldDecorate(day: CalendarDay): Boolean = dates.contains(day)
+        override fun decorate(view: DayViewFacade) {
+            view.setSelectionDrawable(ContextCompat.getDrawable(context, R.drawable.ic_cake_l)!!)
+        }
+    }}
 

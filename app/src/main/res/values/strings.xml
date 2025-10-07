@@ -1,30 +1,65 @@
 <resources>
-    <string name="app_name">SayDay</string>
+    <string name="app_name" translatable="false">SayDay</string>
     <string name="select_date">Select Date</string>
     <string name="start_recording">Start Recording</string>
-    <string name="logo">logo</string>
+    <string name="logo" translatable="false">logo</string>
     <string name="pick_a_day">Pick a Day</string>
-    <string name="my_day">My Day...</string>
-    <string name="app_logo">App Logo</string>
-    <string name="sayday">SayDay</string>
-    <string name="record_your_day">SayDay</string>
+    <string name="my_day" translatable="false">My Day...</string>
+    <string name="app_logo" translatable="false">App Logo</string>
+    <string name="sayday" translatable="false">SayDay</string>
+    <string name="record_your_day" translatable="false">SayDay</string>
     <string name="record_your_day_tagline">Record. Remember. Relive.</string>
-    <string name="recordings_list">recordings list</string>
-    <string name="logo_small">logo_small</string>
-    <string name="bg_stripes">bg_stripes</string>
-    <string name="edit_view">edit_view</string>
-    <string name="tape_logo" />
-    <string name="birthday" />
-    <string name="close_calendar" />
+    <string name="recordings_list" translatable="false">recordings list</string>
+    <string name="logo_small" translatable="false">logo_small</string>
+    <string name="bg_stripes" translatable="false">bg_stripes</string>
+    <string name="edit_view" translatable="false">edit_view</string>
+    <string name="tape_logo" translatable="false" />
+    <string name="birthday" translatable="false" />
+    <string name="close_calendar" translatable="false" />
     <string name="mark_birthday">Mark Birthday</string>
-    <string name="add_image">add image</string>
-    <string name="delete_image" />
+    <string name="add_image" translatable="false">add image</string>
+    <string name="delete_image" translatable="false" />
     <string name="add_image_label">Add Image</string>
-    <string name="image_border" />
-    <string name="stamp_border">Stamp border</string>
+    <string name="image_border" translatable="false" />
+    <string name="stamp_border" translatable="false">Stamp border</string>
     <string name="RECORD">Record</string>
     <string name="rate_sayday">Rate SayDay</string>
     <string name="archive_my_sayday">Archive My SayDay</string>
     <string name="how_to">How It Works</string>
     <string name="about">About SayDay</string>
+    <string name="add_title_hint">Add a title here</string>
+    <string name="stop_rec">Stop</string>
+    <string name="choose_your_tape">Choose your Tape</string>
+    <string name="recording">Recording</string>
+
+    <string name="recording_file_is_invalid">Recording file is invalid</string>
+    <string name="please_grant_audio_recording_permission">Please grant audio recording permission</string>
+    <string name="title_updated_successfully">Title updated successfully!</string>
+    <string name="cancel">Cancel</string>
+    <string name="edit_recording_title">Edit Recording Title</string>
+    <string name="save">Save</string>
+    <string name="recording_saved_successfully">Recording saved successfully!</string>
+    <string name="no_recordings_yet_for_this_date">No recordings yet for this date</string>
+    <string name="delete_recording">Delete Recording</string>
+    <string name="are_you_sure_you_want_to_delete_this_recording_this_action_cannot_be_undone">Are you sure you want to delete this recording? This action cannot be undone.</string>
+    <string name="recording_deleted">Recording deleted</string>
+    <string name="recording_progress">Recording...</string>
+    <string name="recording_to_progress">Recording begins</string>
+    <string name="archive_created">Archive Created</string>
+    <string name="your_recordings_have_been_archived_what_would_you_like_to_do">Your recordings have been archived. What would you like to do?</string>
+    <string name="open_location">Open Location</string>
+    <string name="no_app_found_to_open_zip_file">No app found to open ZIP file.</string>
+    <string name="open_with">Open with</string>
+    <string name="share_zip">Share ZIP</string>
+    <string name="failed_to_delete_recording">Failed to delete recording</string>
+    <string name="permission_granted_you_can_now_record_audio_and_pick_images">Permission granted! You can now record audio and pick images.</string>
+    <string name="audio_and_storage_permissions_are_required_for_this_app_to_work">Audio and storage permissions are required for this app to work.</string>
+    <string name="this_day_is_marked_as_a_birthday">This day is marked as a Birthday!</string>
+    <string name="cancel_btn">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="delete_image_msg">Delete Image</string>
+    <string name="are_you_sure_you_want_to_delete_this_image">Are you sure you want to delete this image?</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="close">Close</string>
 </resources>

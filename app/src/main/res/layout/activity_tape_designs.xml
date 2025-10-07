@@ -5,13 +5,13 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_app3">
+    android:background="@drawable/bg_app">
 
     <TextView
         android:id="@+id/title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Choose your Tape"
+        android:text="@string/choose_your_tape"
         android:textSize="20sp"
         android:fontFamily="@font/playpen_medium"
         app:layout_constraintTop_toTopOf="parent"

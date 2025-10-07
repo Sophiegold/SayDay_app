@@ -48,6 +48,7 @@ dependencies {
     implementation("com.prolificinteractive:material-calendarview:1.4.3")
     // Core Splash Screen API (Android 12+ compatible)
     implementation("androidx.core:core-splashscreen:1.0.1")
+
 // Animation support
     implementation("androidx.dynamicanimation:dynamicanimation:1.0.0")
 // If you want to use Lottie animations for more advanced splash screens

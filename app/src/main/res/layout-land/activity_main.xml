@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_app3">
+    android:background="@drawable/bg_app">
 
     <!-- TOP APP BAR / TOOLBAR AT THE VERY TOP -->
     <com.google.android.material.appbar.MaterialToolbar
@@ -62,7 +62,7 @@
         android:maxLines="3"
         android:fontFamily="@font/playpen_medium"
         android:textSize="14sp"
-        android:layout_marginTop="6dp"
+        android:layout_marginTop="8dp"
         app:layout_constraintWidth_percent="0.16"
         app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintTop_toTopOf="@id/tapeLogo"
@@ -71,7 +71,7 @@
         app:layout_constraintHorizontal_bias="0.06" />
 
     <TextView
-        android:layout_width="wrap_content"
+        android:layout_width="110dp"
         android:layout_height="25dp"
         android:paddingTop="5dp"
         android:paddingBottom="5dp"
@@ -85,7 +85,8 @@
         app:layout_constraintBottom_toTopOf="@id/dateButton"
         app:layout_constraintStart_toStartOf="@id/dateButton"
         app:layout_constraintEnd_toEndOf="@id/dateButton"
-        android:translationY="20dp"
+        android:translationY="22dp"
+        android:translationX="5dp"
         android:rotation="4"/>
 
     <!-- Day Title EditText -->
@@ -139,6 +140,7 @@
         app:tint="@android:color/white" />
 
     <TextView
+        android:id="@+id/recordButton_lbl"
         android:layout_width="wrap_content"
         android:layout_height="25dp"
         android:padding="5dp"
@@ -202,15 +204,17 @@
         android:id="@+id/recordingsScroll"
         android:contentDescription="@string/recordings_list"
         android:background="@drawable/notepaper"
+        android:layout_marginTop="15dp"
         android:padding="6dp"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:fillViewport="true"
         app:layout_constraintTop_toBottomOf="@id/topAppBar"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/recordButton"
         app:layout_constraintStart_toEndOf="@id/tapeLogo"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintWidth_percent="0.35">
+        app:layout_constraintWidth_percent="0.42"
+        app:layout_constraintHeight_percent="0.40">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/recordingsContent"
@@ -221,6 +225,7 @@
             <!-- Recordings container (vertical) -->
             <LinearLayout
                 android:id="@+id/recordingsList"
+                android:fillViewport="true"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
@@ -232,55 +237,65 @@
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"/>
-            <!-- Image block always anchored to bottom -->
 
-            <FrameLayout
-                android:id="@+id/myImage"
-                android:layout_width="wrap_content"
-                android:layout_height="0dp"
-                android:visibility="gone"
-                app:layout_constraintTop_toBottomOf="@id/recordingsList"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent">
 
-                <!-- Main image view, required for your code to work -->
-                <ImageView
-                    android:id="@+id/myImageView"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:contentDescription="@string/add_image"
-                    android:scaleType="fitCenter"/>
-
-                <!-- Minus (remove) icon -->
-                <ImageButton
-                    android:id="@+id/minusIcon"
-                    android:layout_width="30dp"
-                    android:layout_height="30dp"
-                    android:background="@drawable/ic_remove"
-                    android:layout_gravity="top|end"
-                    android:visibility="visible"
-                    android:contentDescription="@string/delete_image"
-                    android:elevation="6dp"
-                    android:padding="8dp"
-                    app:tint="@android:color/white" />
-
-            </FrameLayout>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </ScrollView>
+
+    <FrameLayout
+        android:id="@+id/myImage"
+        android:layout_width="300dp"
+        android:layout_height="270dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="@id/recordingsScroll"
+        app:layout_constraintTop_toTopOf="@id/recordButton"
+        >
+
+        <ImageView
+            android:id="@+id/myImageView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop" />
+
+        <ImageView
+            android:id="@+id/frameOverlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/image_frame"
+            android:scaleType="centerCrop"
+            android:layout_marginHorizontal="12dp"
+            android:clickable="false"
+            android:focusable="false"/>
+
+        <ImageButton
+            android:id="@+id/minusIcon"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:background="@drawable/ic_remove"
+            android:layout_gravity="top|end"
+            android:visibility="visible"
+            android:contentDescription="@string/delete_image"
+            android:elevation="6dp"
+            android:padding="8dp"
+            />
+    </FrameLayout>
 
     <!-- + Button for adding image, right corner above recordings list -->
     <ImageButton
         android:id="@+id/addImageButton"
         android:layout_width="50dp"
         android:layout_height="50dp"
-        android:src="@drawable/ic_add"
+        android:scaleType="centerInside"
+        android:translationX="5dp"
+        android:background="?selectableItemBackgroundBorderless"
         android:contentDescription="@string/add_image"
-        android:layout_marginTop="-10dp"
-        app:layout_constraintBottom_toBottomOf="@id/recordingsScroll"
-        app:layout_constraintStart_toStartOf="@id/recordingsScroll"
-        android:background="?selectableItemBackgroundBorderless" />
+        android:src="@drawable/ic_add_img"
+        app:layout_constraintBottom_toBottomOf="@id/myImage"
+        app:layout_constraintStart_toStartOf="@id/recordingsScroll" />
+
+
 
     <!-- Calendar Container with close button -->
     <LinearLayout

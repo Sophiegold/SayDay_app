@@ -1,5 +1,6 @@
 [versions]
 agp = "8.13.0"
+androidImageCropper = "4.6.0"
 kotlin = "2.0.21"
 coreKtx = "1.17.0"
 junit = "4.13.2"
@@ -14,6 +15,7 @@ glide = "4.16.0"
 
 
 [libraries]
+android-image-cropper = { module = "com.vanniktech:android-image-cropper", version.ref = "androidImageCropper" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
