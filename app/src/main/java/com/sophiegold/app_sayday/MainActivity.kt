@@ -1,27 +1,25 @@
 package com.sophiegold.app_sayday
 
-
-import android.graphics.Bitmap
-import android.graphics.Matrix
-import android.net.Uri
-import android.provider.MediaStore
-import androidx.exifinterface.media.ExifInterface
-import androidx.core.content.FileProvider
-import java.io.*
-import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
+import android.content.res.Configuration
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Color
+import android.graphics.Matrix
 import android.media.MediaPlayer
+import android.net.Uri
 import android.os.*
+import android.provider.MediaStore
 import android.util.Log
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewGroup
 import android.view.animation.AnimationUtils
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
@@ -30,27 +28,30 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.core.content.res.ResourcesCompat
-import com.prolificinteractive.materialcalendarview.MaterialCalendarView
+import androidx.exifinterface.media.ExifInterface
+import com.bumptech.glide.Glide
+import com.github.chrisbanes.photoview.PhotoView
+import com.prolificinteractive.materialcalendarview.CalendarDay
 import com.prolificinteractive.materialcalendarview.DayViewDecorator
 import com.prolificinteractive.materialcalendarview.DayViewFacade
-import com.prolificinteractive.materialcalendarview.CalendarDay
-import org.json.JSONObject
+import com.prolificinteractive.materialcalendarview.MaterialCalendarView
 import org.json.JSONArray
-import java.io.File
+import org.json.JSONObject
+import java.io.*
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.Executors
-import com.bumptech.glide.Glide
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 class MainActivity : AppCompatActivity() {
 
     // UI Components
-
     private lateinit var tapeLogoImageView: ImageView
     private lateinit var dateButton: TextView
     private lateinit var recordButton: ImageButton
-
     private lateinit var recordButton_lbl: TextView
     private lateinit var recordingsList: LinearLayout
     private lateinit var dayTitle: EditText
@@ -63,6 +64,16 @@ class MainActivity : AppCompatActivity() {
     private lateinit var addImageButton: ImageButton
     private lateinit var myImage: FrameLayout // For image feature
 
+    private val PREFS_HOWTO_KEY = "prefs_howto"
+    private val PREFS_KEY_FIRST_LAUNCH_HOWTO = "first_launch_howto"
+
+    // overlay views (nullable for safety)
+    private lateinit var howtoOverlay: FrameLayout
+    private lateinit var howtoPanel: View
+    private var btnCloseOverlay: View? = null
+    private var btnGotIt: View? = null
+    private var howtoContentContainer: ViewGroup? = null
+
     // Recording Management
     private lateinit var audioManager: AudioRecordingManager
     private var selectedDate: String = ""
@@ -73,9 +84,14 @@ class MainActivity : AppCompatActivity() {
     private val executor = Executors.newSingleThreadExecutor()
     private val handler = Handler(Looper.getMainLooper())
 
-    // Per-date image URIs (serialized as JSON string map)
+    // Per-date image URIs and matrices
+
+    private var pendingImageDate: String? = null
     private val imageUrisByDate = mutableMapOf<String, String>()
     private val IMAGE_URIS_KEY = "image_uris_by_date"
+    private val imageMatrixByDate = mutableMapOf<String, FloatArray>()
+    private val IMAGE_MATRIX_KEY = "image_matrix_by_date"
+    private val matrixSaveRunnableMap = mutableMapOf<String, Runnable>()
 
     companion object {
         private const val PERMISSION_REQUEST_CODE = 1001
@@ -106,19 +122,32 @@ class MainActivity : AppCompatActivity() {
     )
 
     private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        Log.d("ImagePicker", "Received URI: $uri")
+        Log.d("ImagePicker", "Received URI: $uri (pendingDate=$pendingImageDate)")
+
+        val targetDate = pendingImageDate ?: selectedDate
+        // clear pendingDate now that we have the result
+        pendingImageDate = null
+
         if (uri != null) {
             try {
+                // store persistable permission if available
                 contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
             } catch (e: SecurityException) {
                 Log.w("ImagePicker", "Persist permission failed: ${e.message}")
             }
+
             val mimeType = contentResolver.getType(uri)
-            Log.d("ImagePicker", "MIME type: $mimeType")
             if (mimeType?.startsWith("image/") == true) {
-                imageUrisByDate[selectedDate] = uri.toString()
+                imageUrisByDate[targetDate] = uri.toString()
                 saveImageUris()
-                updateMyImage()
+
+                // If the image is for the currently visible date, update UI now
+                if (targetDate == selectedDate) {
+                    updateMyImage()
+                } else {
+                    // optionally notify user that image was saved for another date
+
+                }
             } else {
                 Toast.makeText(this, "Selected file is not an image", Toast.LENGTH_SHORT).show()
             }
@@ -141,8 +170,7 @@ class MainActivity : AppCompatActivity() {
                 val colorResId = logoToColorMap[selectedLogoResId] ?: R.color.defaultDayTitleColor
                 val color = ContextCompat.getColor(this, colorResId)
                 dayTitle.setTextColor(color)
-                dayTitle.setHintTextColor(color) // <-- this sets the hint text color to match
-
+                dayTitle.setHintTextColor(color)
                 getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
                     .edit()
                     .putInt(SELECTED_DAYTITLE_COLOR_KEY, colorResId)
@@ -151,103 +179,93 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-
-
-
-
-    /**
-     * Loads a Bitmap from a URI and corrects its orientation using EXIF data, if needed.
-     */
+    // Safe bitmap load with auto-close streams and EXIF handling
     fun getCorrectlyOrientedBitmap(context: Context, imageUri: Uri): Bitmap? {
-        val inputStream = context.contentResolver.openInputStream(imageUri) ?: return null
-        val bitmap = BitmapFactory.decodeStream(inputStream)
-        inputStream.close()
-        if (bitmap == null) return null
+        return try {
+            val bitmap = context.contentResolver.openInputStream(imageUri)?.use { input ->
+                BitmapFactory.decodeStream(input)
+            } ?: return null
 
-        val exifInputStream = context.contentResolver.openInputStream(imageUri) ?: return bitmap
-        val exif = androidx.exifinterface.media.ExifInterface(exifInputStream)
-        val orientation = exif.getAttributeInt(
-            androidx.exifinterface.media.ExifInterface.TAG_ORIENTATION,
-            androidx.exifinterface.media.ExifInterface.ORIENTATION_NORMAL
-        )
-        exifInputStream.close()
+            val exif = context.contentResolver.openInputStream(imageUri)?.use { exifStream ->
+                ExifInterface(exifStream)
+            } ?: return bitmap
 
-        val matrix = Matrix()
-        when (orientation) {
-            androidx.exifinterface.media.ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
-            androidx.exifinterface.media.ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
-            androidx.exifinterface.media.ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
-            else -> return bitmap
+            val orientation = exif.getAttributeInt(
+                ExifInterface.TAG_ORIENTATION,
+                ExifInterface.ORIENTATION_NORMAL
+            )
+            val matrix = Matrix()
+            when (orientation) {
+                ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
+                ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
+                ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
+                else -> return bitmap
+            }
+            Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+        } catch (e: Exception) {
+            Log.w("MainActivity", "getCorrectlyOrientedBitmap failed: ${e.message}")
+            null
         }
-        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // --- TOP APP BAR / TOOLBAR SETUP ---
+        // Initialize SharedPreferences
+        prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+
+        // --- Initialize all UI components (including tapeLogo) ---
+        initializeComponents()
+
+        // FIRST-LAUNCH HOWTO: show only after views are laid out so positions are correct
+        val firstLaunch = prefs.getBoolean(PREFS_KEY_FIRST_LAUNCH_HOWTO, true)
+        if (firstLaunch) {
+            // Defer until the view is laid out
+            window.decorView.post {
+                showHowtoOverlay()
+                prefs.edit().putBoolean(PREFS_KEY_FIRST_LAUNCH_HOWTO, false).apply()
+            }
+        }
+
+        // Toolbar
         val topAppBar = findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.topAppBar)
         setSupportActionBar(topAppBar)
-
-// Show your custom popup menu on hamburger click
         topAppBar.setNavigationOnClickListener { view ->
             val popup = PopupMenu(this, view)
             popup.menuInflater.inflate(R.menu.top_appbar_menu, popup.menu)
-
             popup.setOnMenuItemClickListener { menuItem ->
                 when (menuItem.itemId) {
-                    R.id.menu_about -> {
-                        Toast.makeText(this, "", Toast.LENGTH_SHORT).show()
-                        true
-                    }
-
                     R.id.menu_howto -> {
-                        startActivity(Intent(this, HowtoActivity::class.java))
+                        // make sure to show after layout as well
+                        window.decorView.post { showHowtoOverlay() }
                         true
                     }
-
-
-                    R.id.menu_archive -> {
-                        archiveRecordings(this)
-                        true
-                    }
-                    R.id.menu_rate -> {
-                        Toast.makeText(this, "", Toast.LENGTH_SHORT).show()
-                        true
-                    }
+                    R.id.menu_archive -> { archiveRecordings(this); true }
                     else -> false
                 }
             }
             popup.show()
         }
-
-// Optionally set the title programmatically
         topAppBar.title = "SayDay"
 
-        tapeLogoImageView = findViewById(R.id.tapeLogo)
-        val savedLogoResId = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-            .getInt(TAPE_LOGO_KEY, R.drawable.taia)
-        tapeLogoImageView.setImageResource(savedLogoResId)
-
-        findViewById<ImageView>(R.id.brushIcon)?.setOnClickListener {
-            val intent = Intent(this, TapeDesignsActivity::class.java)
-            selectLogoLauncher.launch(intent)
-        }
-
-        initializeComponents()
         setupUI()
         loadData()
-        loadImageUris() // Load image URIs per date
         checkPermissions()
         updateDateButton()
         updateDayTitle()
         updateRecordingsList()
         startButtonAnimations()
-        updateMyImage() // Show image for current date
+        loadImageUris()
+        updateMyImage()
 
-
+        // Brush / design selection
+        findViewById<ImageView>(R.id.brushIcon)?.setOnClickListener {
+            val intent = Intent(this, TapeDesignsActivity::class.java)
+            selectLogoLauncher.launch(intent)
+        }
     }
+
 
 
     private fun initializeComponents() {
@@ -272,8 +290,11 @@ class MainActivity : AppCompatActivity() {
             if (selectedDate.isNotEmpty()) {
                 if (!bdayDates.contains(selectedDate)) {
                     bdayDates.add(selectedDate)
-                    Toast.makeText(this,
-                        getString(R.string.this_day_is_marked_as_a_birthday), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        this,
+                        getString(R.string.this_day_is_marked_as_a_birthday),
+                        Toast.LENGTH_SHORT
+                    ).show()
                 } else {
                     bdayDates.remove(selectedDate)
                 }
@@ -292,6 +313,7 @@ class MainActivity : AppCompatActivity() {
 
         // Add image picker logic
         addImageButton.setOnClickListener {
+            pendingImageDate = selectedDate
             pickImageLauncher.launch("image/*")
         }
 
@@ -327,17 +349,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-
     private fun setupUI() {
-        dateButton.setOnClickListener {
-            toggleCalendarVisibility()
-        }
+        dateButton.setOnClickListener { toggleCalendarVisibility() }
 
         calendarView.setOnDateChangedListener { _, date, _ ->
             handleDateSelection(date)
         }
-
-
 
         recordButton.setOnClickListener {
             if (audioManager.isRecording()) {
@@ -351,9 +368,7 @@ class MainActivity : AppCompatActivity() {
 
         dayTitle.setOnFocusChangeListener { _, hasFocus ->
             dayTitle.isCursorVisible = hasFocus
-            if (!hasFocus) {
-                saveDayTitle()
-            }
+            if (!hasFocus) saveDayTitle()
         }
 
         dayTitle.addTextChangedListener(object : android.text.TextWatcher {
@@ -377,16 +392,12 @@ class MainActivity : AppCompatActivity() {
                 runOnUiThread {
                     updateRecordingUI(false)
                     stopRecordingTimer()
-
-                    if (filePath != null && error == null) {
-                        addNewRecording(filePath)
-                    } else {
-                        showError(error ?: "Recording failed")
-                    }
+                    if (filePath != null && error == null) addNewRecording(filePath)
+                    else showError(error ?: "Recording failed")
                 }
             }
 
-            override fun onPlaybackStarted() { }
+            override fun onPlaybackStarted() {}
             override fun onPlaybackStopped() {
                 runOnUiThread { updatePlayButtonsState() }
             }
@@ -394,11 +405,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateBdayIconState() {
-        if (bdayDates.contains(selectedDate)) {
-            bdayImage.alpha = 1f
-        } else {
-            bdayImage.alpha = 0.6f
-        }
+        bdayImage.alpha = if (bdayDates.contains(selectedDate)) 1f else 0.6f
     }
 
     private fun startButtonAnimations() {
@@ -412,11 +419,8 @@ class MainActivity : AppCompatActivity() {
     private fun saveDayTitle() {
         if (selectedDate.isNotEmpty()) {
             val currentTitle = dayTitle.text.toString().trim()
-            if (currentTitle.isNotEmpty()) {
-                dayTitlesByDate[selectedDate] = currentTitle
-            } else {
-                dayTitlesByDate.remove(selectedDate)
-            }
+            if (currentTitle.isNotEmpty()) dayTitlesByDate[selectedDate] = currentTitle
+            else dayTitlesByDate.remove(selectedDate)
             saveData()
         }
     }
@@ -452,11 +456,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == PERMISSION_REQUEST_CODE) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -518,9 +518,7 @@ class MainActivity : AppCompatActivity() {
         try {
             val arr = JSONArray(bdayJson!!)
             bdayDates.clear()
-            for (i in 0 until arr.length()) {
-                bdayDates.add(arr.getString(i))
-            }
+            for (i in 0 until arr.length()) bdayDates.add(arr.getString(i))
         } catch (_: Exception) {
             bdayDates.clear()
         }
@@ -530,16 +528,12 @@ class MainActivity : AppCompatActivity() {
             selectedDate = today
             val cal = Calendar.getInstance()
             calendarView.selectedDate =
-                CalendarDay.from(
-                    cal.get(Calendar.YEAR),
-                    cal.get(Calendar.MONTH),
-                    cal.get(Calendar.DAY_OF_MONTH)
-                )
+                CalendarDay.from(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH))
         }
         recordButton.isEnabled = selectedDate.isNotEmpty()
         updateCalendarIndicators()
         updateBdayIconState()
-        updateMyImage() // Update image for current date after loading data
+        updateMyImage() // Update image for current date
     }
 
     private fun saveData() {
@@ -562,9 +556,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 val titlesObject = JSONObject()
-                dayTitlesByDate.forEach { (date, title) ->
-                    titlesObject.put(date, title)
-                }
+                dayTitlesByDate.forEach { (date, title) -> titlesObject.put(date, title) }
 
                 val bdayArr = JSONArray()
                 bdayDates.forEach { date -> bdayArr.put(date) }
@@ -576,7 +568,7 @@ class MainActivity : AppCompatActivity() {
                     .putString(BDAY_DATES_KEY, bdayArr.toString())
                     .apply()
             } catch (_: Exception) {
-                // Handle save error
+                // ignore
             }
         }
     }
@@ -587,11 +579,8 @@ class MainActivity : AppCompatActivity() {
             recordingsByDate.forEach { (date, recordings) ->
                 val validRecordings = recordings.filter { File(it.filePath).exists() }.toMutableList()
                 if (validRecordings.size != recordings.size) {
-                    if (validRecordings.isEmpty()) {
-                        keysToRemove.add(date)
-                    } else {
-                        recordingsByDate[date] = validRecordings
-                    }
+                    if (validRecordings.isEmpty()) keysToRemove.add(date)
+                    else recordingsByDate[date] = validRecordings
                 }
             }
             keysToRemove.forEach { recordingsByDate.remove(it) }
@@ -642,7 +631,8 @@ class MainActivity : AppCompatActivity() {
     private fun showEditTitleDialog(recording: RecordingInfo) {
         val editText = EditText(this).apply {
             setText(recording.customTitle.ifEmpty {
-                recording.fileName.replace("${getString(R.string.recording)}_${selectedDate}_", "").replace(".3gp", "")
+                recording.fileName.replace("${getString(R.string.recording)}_${selectedDate}_", "")
+                    .replace(".3gp", "")
             })
             hint = (getString(R.string.edit_recording_title))
             setSingleLine(true)
@@ -738,9 +728,7 @@ class MainActivity : AppCompatActivity() {
             recordingsList.addView(noText)
             return
         }
-        todaysRecordings.sortedByDescending { it.timestamp }.forEach { recording ->
-            createRecordingRow(recording)
-        }
+        todaysRecordings.sortedByDescending { it.timestamp }.forEach { recording -> createRecordingRow(recording) }
         recordingsScroll.post { recordingsScroll.fullScroll(ScrollView.FOCUS_DOWN) }
     }
 
@@ -748,10 +736,7 @@ class MainActivity : AppCompatActivity() {
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             setPadding(16, 12, 16, 12)
-            background = ContextCompat.getDrawable(
-                this@MainActivity,
-                android.R.drawable.list_selector_background
-            )
+            background = ContextCompat.getDrawable(this@MainActivity, android.R.drawable.list_selector_background)
         }
         val infoLayout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -769,10 +754,7 @@ class MainActivity : AppCompatActivity() {
             textSize = 14f
             setTextColor(android.graphics.Color.BLACK)
             setOnClickListener { showEditTitleDialog(recording) }
-            background = ContextCompat.getDrawable(
-                this@MainActivity,
-                android.R.drawable.list_selector_background
-            )
+            background = ContextCompat.getDrawable(this@MainActivity, android.R.drawable.list_selector_background)
             setPadding(8, 8, 8, 8)
         }
         infoLayout.addView(nameText)
@@ -786,17 +768,13 @@ class MainActivity : AppCompatActivity() {
             setImageResource(R.drawable.ic_play)
             background = null
             setPadding(12, 12, 12, 12)
-            setOnClickListener {
-                togglePlayPause(recording.filePath, this)
-            }
+            setOnClickListener { togglePlayPause(recording.filePath, this) }
         }
         val deleteButton = ImageButton(this).apply {
             setImageResource(R.drawable.ic_delete)
             background = null
             setPadding(12, 12, 12, 12)
-            setOnClickListener {
-                showDeleteConfirmation(recording)
-            }
+            setOnClickListener { showDeleteConfirmation(recording) }
         }
         row.addView(infoLayout)
         row.addView(editButton)
@@ -811,9 +789,7 @@ class MainActivity : AppCompatActivity() {
             button.setImageResource(R.drawable.ic_play)
         } else {
             audioManager.playRecording(filePath) { isPlaying ->
-                runOnUiThread {
-                    button.setImageResource(if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play)
-                }
+                runOnUiThread { button.setImageResource(if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play) }
             }
         }
     }
@@ -830,9 +806,7 @@ class MainActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle(getString(R.string.delete_recording))
             .setMessage(getString(R.string.are_you_sure_you_want_to_delete_this_recording_this_action_cannot_be_undone))
-            .setPositiveButton(getString(R.string.delete)) { _, _ ->
-                deleteRecording(recording)
-            }
+            .setPositiveButton(getString(R.string.delete)) { _, _ -> deleteRecording(recording) }
             .setNegativeButton(getString(R.string.cancel_btn), null)
             .show()
     }
@@ -844,26 +818,19 @@ class MainActivity : AppCompatActivity() {
             handler.post {
                 if (deleted) {
                     recordingsByDate[selectedDate]?.remove(recording)
-                    if (recordingsByDate[selectedDate]?.isEmpty() == true) {
-                        recordingsByDate.remove(selectedDate)
-                    }
+                    if (recordingsByDate[selectedDate]?.isEmpty() == true) recordingsByDate.remove(selectedDate)
                     updateRecordingsList()
                     updateCalendarIndicators()
                     saveData()
                     showSuccess(getString(R.string.recording_deleted))
-                } else {
-                    showError(getString(R.string.failed_to_delete_recording))
-                }
+                } else showError(getString(R.string.failed_to_delete_recording))
             }
         }
     }
 
     private fun updateRecordingUI(isRecording: Boolean) {
         if (isRecording) {
-            Glide.with(this)
-                .asGif()
-                .load(R.drawable.red_blink)
-                .into(recordButton)
+            Glide.with(this).asGif().load(R.drawable.red_blink).into(recordButton)
             recordingStatusText.text = getString(R.string.recording_to_progress)
             recordingStatusText.visibility = View.VISIBLE
         } else {
@@ -930,73 +897,71 @@ class MainActivity : AppCompatActivity() {
         super.onPause()
         saveDayTitle()
         saveData()
-        saveImageUris() // Also persist images when paused
+        saveImageUris()
+
     }
 
-    private fun showError(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
-    }
-
-    private fun showSuccess(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-    }
-
+    private fun showError(message: String) { Toast.makeText(this, message, Toast.LENGTH_LONG).show() }
+    private fun showSuccess(message: String) { Toast.makeText(this, message, Toast.LENGTH_SHORT).show() }
 
     fun archiveRecordings(context: Context) {
-        val allRecordingFiles = recordingsByDate.values.flatten().map { File(it.filePath) }.filter { it.exists() }
-        if (allRecordingFiles.isEmpty()) {
-            Toast.makeText(context, "No recordings found!", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val zipFile = File(context.filesDir, "SayDayRecordings.zip")
-        ZipOutputStream(BufferedOutputStream(FileOutputStream(zipFile))).use { zos ->
-            allRecordingFiles.forEach { file ->
-                FileInputStream(file).use { fis ->
-                    val entry = ZipEntry(file.name)
-                    zos.putNextEntry(entry)
-                    fis.copyTo(zos)
-                    zos.closeEntry()
+        // Run zip creation on background thread
+        executor.execute {
+            try {
+                val allRecordingFiles = recordingsByDate.values.flatten().map { File(it.filePath) }.filter { it.exists() }
+                if (allRecordingFiles.isEmpty()) {
+                    handler.post { Toast.makeText(context, "No recordings found!", Toast.LENGTH_SHORT).show() }
+                    return@execute
                 }
+
+                val zipFile = File(context.filesDir, "SayDayRecordings.zip")
+                ZipOutputStream(BufferedOutputStream(FileOutputStream(zipFile))).use { zos ->
+                    allRecordingFiles.forEach { file ->
+                        FileInputStream(file).use { fis ->
+                            val entry = ZipEntry(file.name)
+                            zos.putNextEntry(entry)
+                            fis.copyTo(zos)
+                            zos.closeEntry()
+                        }
+                    }
+                }
+
+                val zipUri = FileProvider.getUriForFile(context, context.packageName + ".provider", zipFile)
+
+                handler.post {
+                    AlertDialog.Builder(context)
+                        .setTitle(getString(R.string.archive_created))
+                        .setMessage(getString(R.string.your_recordings_have_been_archived_what_would_you_like_to_do))
+                        .setPositiveButton(getString(R.string.open_location)) { _, _ ->
+                            val intent = Intent(Intent.ACTION_VIEW).apply {
+                                setDataAndType(zipUri, "application/zip")
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            }
+                            try {
+                                context.startActivity(Intent.createChooser(intent, getString(R.string.open_with)))
+                            } catch (e: Exception) {
+                                Toast.makeText(context, getString(R.string.no_app_found_to_open_zip_file), Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                        .setNegativeButton(getString(R.string.share_zip)) { _, _ ->
+                            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                type = "application/zip"
+                                putExtra(Intent.EXTRA_STREAM, zipUri)
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            }
+                            try {
+                                context.startActivity(Intent.createChooser(shareIntent, "Share ZIP"))
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "No app found to share ZIP.", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                        .setNeutralButton(getString(R.string.close), null)
+                        .show()
+                }
+            } catch (e: Exception) {
+                handler.post { Toast.makeText(context, "Failed to create ZIP: ${e.message}", Toast.LENGTH_LONG).show() }
             }
         }
-
-        // Use FileProvider to get a URI for the ZIP file
-        val zipUri = FileProvider.getUriForFile(
-            context,
-            context.packageName + ".provider",
-            zipFile
-        )
-
-        AlertDialog.Builder(context)
-            .setTitle(getString(R.string.archive_created))
-            .setMessage(getString(R.string.your_recordings_have_been_archived_what_would_you_like_to_do))
-            .setPositiveButton(getString(R.string.open_location)) { _, _ ->
-                val intent = Intent(Intent.ACTION_VIEW).apply {
-                    setDataAndType(zipUri, "application/zip")
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                }
-                try {
-                    context.startActivity(Intent.createChooser(intent, getString(R.string.open_with)))
-                } catch (e: Exception) {
-                    Toast.makeText(context,
-                        getString(R.string.no_app_found_to_open_zip_file), Toast.LENGTH_SHORT).show()
-                }
-            }
-            .setNegativeButton(getString(R.string.share_zip)) { _, _ ->
-                val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                    type = "application/zip"
-                    putExtra(Intent.EXTRA_STREAM, zipUri)
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                }
-                try {
-                    context.startActivity(Intent.createChooser(shareIntent, "Share ZIP"))
-                } catch (e: Exception) {
-                    Toast.makeText(context, "No app found to share ZIP.", Toast.LENGTH_SHORT).show()
-                }
-            }
-            .setNeutralButton(getString(R.string.close), null)
-            .show()
     }
 
     private fun updateCalendarIndicators() {
@@ -1011,19 +976,14 @@ class MainActivity : AppCompatActivity() {
                     date?.let {
                         val cal = Calendar.getInstance()
                         cal.time = it
-                        CalendarDay.from(
-                            cal.get(Calendar.YEAR),
-                            cal.get(Calendar.MONTH),
-                            cal.get(Calendar.DAY_OF_MONTH)
-                        )
+                        CalendarDay.from(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH))
                     }
                 } catch (_: Exception) {
                     null
                 }
             }
-        if (datesWithRecordings.isNotEmpty()) {
-            calendarView.addDecorator(RecordingDotDecorator(this, datesWithRecordings))
-        }
+        if (datesWithRecordings.isNotEmpty()) calendarView.addDecorator(RecordingDotDecorator(this, datesWithRecordings))
+
         val birthdayDays = bdayDates.mapNotNull { dateString ->
             try {
                 val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
@@ -1031,20 +991,15 @@ class MainActivity : AppCompatActivity() {
                 date?.let {
                     val cal = Calendar.getInstance()
                     cal.time = it
-                    CalendarDay.from(
-                        cal.get(Calendar.YEAR),
-                        cal.get(Calendar.MONTH),
-                        cal.get(Calendar.DAY_OF_MONTH)
-                    )
+                    CalendarDay.from(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH))
                 }
             } catch (_: Exception) {
                 null
             }
         }
-        if (birthdayDays.isNotEmpty()) {
-            calendarView.addDecorator(BirthdayDecorator(this, birthdayDays))
-        }
+        if (birthdayDays.isNotEmpty()) calendarView.addDecorator(BirthdayDecorator(this, birthdayDays))
     }
+
 
     // --- IMAGE PICKER AND DISPLAY LOGIC ---
 
@@ -1093,8 +1048,8 @@ class MainActivity : AppCompatActivity() {
                         val parentHeight = myImage.height
 
                         val params = myImageView.layoutParams as FrameLayout.LayoutParams
-                        params.width = (parentWidth * 0.8).toInt()
-                        params.height = (parentHeight * 0.8).toInt()
+                        params.width = (parentWidth * 0.83).toInt()
+                        params.height = (parentHeight * 0.83).toInt()
                         params.gravity = Gravity.CENTER
                         myImageView.layoutParams = params
                     }
@@ -1121,14 +1076,187 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+
+
+
+
+    private fun showHowtoOverlay() {
+        lockPortrait()
+        // Initialize overlay components if needed
+        if (!this::howtoOverlay.isInitialized) {
+            howtoOverlay = findViewById(R.id.howtoOverlay)
+            if (howtoOverlay == null) return
+
+            howtoPanel = findViewById(R.id.howtoPanel)
+            btnCloseOverlay = findViewById(R.id.btnCloseOverlay)
+            btnGotIt = findViewById(R.id.btnGotIt)
+
+            // Set up interactions
+            howtoOverlay.setOnClickListener { hideHowtoOverlay() }
+            howtoPanel.setOnClickListener { /* consume click */ }
+            btnCloseOverlay?.setOnClickListener { hideHowtoOverlay() }
+            btnGotIt?.setOnClickListener { hideHowtoOverlay() }
+        }
+
+        // --- Detect current orientation ---
+        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+        // --- Show overlay with fade-in animation ---
+        try {
+            howtoOverlay.bringToFront()
+            howtoOverlay.elevation = 2000f
+            (howtoOverlay.parent as? View)?.let {
+                it.invalidate()
+                it.requestLayout()
+            }
+        } catch (_: Exception) { }
+
+        howtoOverlay.visibility = View.VISIBLE
+        howtoOverlay.alpha = 0f
+        howtoOverlay.animate().alpha(1f).setDuration(180).start()
+        btnCloseOverlay?.requestFocus()
+
+        // --- Clear any previous dynamic tips ---
+        howtoOverlay.removeAllViews()
+
+        // Helper to add a tip and arrow (each with independent offsets)
+        fun addTip(
+            targetId: Int,
+            message: String,
+            arrowRes: Int,
+            arrowOffsetX: Int = 0,
+            arrowOffsetY: Int = -120,
+            textOffsetX: Int = 0,
+            textOffsetY: Int = -200
+        ) {
+            val targetView = findViewById<View>(targetId) ?: return
+            val coords = IntArray(2)
+            targetView.getLocationOnScreen(coords)
+            val x = coords[0]
+            val y = coords[1]
+
+            // Adjust offsets for landscape if needed
+            val yAdj = if (isLandscape) (arrowOffsetY / 2) else arrowOffsetY
+            val textYAdj = if (isLandscape) (textOffsetY / 2) else textOffsetY
+
+            // Arrow
+            val arrow = ImageView(this)
+            arrow.setImageResource(arrowRes)
+            val arrowParams = FrameLayout.LayoutParams(100, 100)
+            arrowParams.leftMargin = x + targetView.width / 2 - 50 + arrowOffsetX
+            arrowParams.topMargin = y + yAdj
+            howtoOverlay.addView(arrow, arrowParams)
+
+            // Tip Text
+            val tip = TextView(this)
+            tip.text = message
+            tip.setTextColor(Color.WHITE)
+            tip.textSize = 16f
+            tip.setBackgroundResource(R.drawable.hint_background)
+            tip.setPadding(12, 6, 12, 6)
+            val tipParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+            )
+            tipParams.leftMargin = x + textOffsetX
+            tipParams.topMargin = y + textYAdj
+            howtoOverlay.addView(tip, tipParams)
+        }
+
+        // --- Add tips with custom manual positioning ---
+        addTip(
+            R.id.recordButton,
+            getString(R.string.tap_here_to_start_recording_your_daily_message),
+            R.drawable.ic_arrow_down,
+            arrowOffsetY = -120,
+            textOffsetY = -270
+        )
+
+        addTip(
+            R.id.dateButton,
+            getString(R.string.select_the_date_you_want_to_edit),
+            R.drawable.ic_arrow_down,
+            arrowOffsetY = -80,
+            textOffsetY = -180
+        )
+
+        addTip(
+            R.id.brushIcon,
+            getString(R.string.tap_to_choose_a_design_for_your_tape),
+            R.drawable.ic_arrow_up,
+            arrowOffsetY = 40,
+            textOffsetY = 140
+        )
+
+        addTip(
+            R.id.recordingsScroll,
+            getString(R.string.all_your_recordings_for_this_day_are_listed_here),
+            R.drawable.ic_arrow_down,
+            arrowOffsetY = 180,
+            textOffsetY = 80
+        )
+
+        addTip(
+            R.id.addImageButton,
+            getString(R.string.add_an_image_for_this_date),
+            R.drawable.ic_arrow_down,
+            arrowOffsetY = -160,
+            textOffsetY = -250
+        )
+
+        // --- Got It button ---
+        val btnGotItDynamic = Button(this)
+        btnGotItDynamic.text = "Got It"
+        val btnParams = FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT
+        )
+        btnParams.gravity = Gravity.END or Gravity.BOTTOM
+        btnParams.bottomMargin = 50
+        btnParams.rightMargin = 30
+        howtoOverlay.addView(btnGotItDynamic, btnParams)
+
+        btnGotItDynamic.setOnClickListener {
+            howtoOverlay.visibility = View.GONE
+        }
+    }
+    private fun hideHowtoOverlay() {
+        if (!this::howtoOverlay.isInitialized) return
+        howtoOverlay.animate()
+            .alpha(0f)
+            .setDuration(150)
+            .withEndAction {
+                howtoOverlay.visibility = View.GONE
+                unlockOrientation()
+            }
+            .start()
+    }
+
+    // Setting force lock portrait screen orientation for the howto screen
+    private fun lockPortrait() {
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+    }
+    private fun unlockOrientation() {
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+    }
+
+
+
     // Decorators for calendar dots and birthdays
-    class BirthdayDecorator(
-        private val context: Context,
-        private val dates: Collection<CalendarDay>
-    ) : DayViewDecorator {
+    class BirthdayDecorator(private val context: Context, private val dates: Collection<CalendarDay>) :
+        DayViewDecorator {
         override fun shouldDecorate(day: CalendarDay): Boolean = dates.contains(day)
         override fun decorate(view: DayViewFacade) {
             view.setSelectionDrawable(ContextCompat.getDrawable(context, R.drawable.ic_cake_l)!!)
         }
-    }}
+    }
 
+    class TodayDecorator(private val context: Context, private val day: CalendarDay) : DayViewDecorator {
+        override fun shouldDecorate(day: CalendarDay): Boolean = day == this.day
+        override fun decorate(view: DayViewFacade) { /* default */ }
+    }
+    class RecordingDotDecorator(private val context: Context, private val days: Collection<CalendarDay>) : DayViewDecorator {
+        override fun shouldDecorate(day: CalendarDay): Boolean = days.contains(day)
+        override fun decorate(view: DayViewFacade) { /* default */ }
+    }
+}

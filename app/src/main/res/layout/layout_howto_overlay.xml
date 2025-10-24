@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/howtoOverlay"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#AE000000"
+    android:visibility="gone"
+    android:clickable="true"
+    android:focusable="true"
+    android:elevation="999dp">
+
+    <LinearLayout
+        android:id="@+id/howtoPanel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_gravity="center"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:background="@android:color/white"
+        android:elevation="1000dp">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingBottom="8dp">
+
+            <TextView
+                android:id="@+id/howtoTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="How to use SayDay"
+                android:textStyle="bold"
+                android:textSize="18sp"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true" />
+
+            <ImageButton
+                android:id="@+id/btnCloseOverlay"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:src="@android:drawable/ic_menu_close_clear_cancel"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/close"
+                app:tint="@android:color/black" />
+        </RelativeLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#DDDDDD"
+            android:layout_marginBottom="8dp" />
+
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end"
+            android:layout_marginTop="12dp">
+
+            <Button
+                android:id="@+id/btnGotIt"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Got it" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

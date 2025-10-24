@@ -32,14 +32,16 @@
         android:fontFamily="@font/playpen_medium"
         android:gravity="center"
         android:text="@string/record_your_day"
+        android:translationY="5dp"
         android:textColor="#010A0F"
-        android:textSize="38sp"
+        android:textSize="35sp"
         android:textStyle="bold"
         app:layout_constraintHorizontal_bias="0.9"
         app:layout_constraintStart_toStartOf="@id/loadingProgressBar"
         app:layout_constraintBottom_toBottomOf="@id/loadingProgressBar"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.51" />
+        android:layout_marginTop="10dp"
+        app:layout_constraintVertical_bias="0.5" />
 
     <!-- Tagline Text over the Image -->
     <TextView

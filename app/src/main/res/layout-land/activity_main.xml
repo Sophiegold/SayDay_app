@@ -245,15 +245,16 @@
 
     <FrameLayout
         android:id="@+id/myImage"
-        android:layout_width="300dp"
-        android:layout_height="270dp"
+        android:layout_width="320dp"
+        android:layout_height="275dp"
         android:visibility="gone"
+        android:translationX="-10dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="@id/recordingsScroll"
         app:layout_constraintTop_toTopOf="@id/recordButton"
         >
 
-        <ImageView
+        <com.github.chrisbanes.photoview.PhotoView
             android:id="@+id/myImageView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -345,4 +346,5 @@
             android:layout_margin="0dp"/>
     </LinearLayout>
 
+    <include layout="@layout/layout_howto_overlay" />
 </androidx.constraintlayout.widget.ConstraintLayout>

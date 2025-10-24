@@ -49,6 +49,8 @@ dependencies {
     // Core Splash Screen API (Android 12+ compatible)
     implementation("androidx.core:core-splashscreen:1.0.1")
 
+    implementation("com.github.Baseflow:PhotoView:2.3.0")
+    implementation("com.github.bumptech.glide:glide:4.16.0")
 // Animation support
     implementation("androidx.dynamicanimation:dynamicanimation:1.0.0")
 // If you want to use Lottie animations for more advanced splash screens

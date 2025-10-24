@@ -62,4 +62,10 @@
     <string name="yes">Yes</string>
     <string name="no">No</string>
     <string name="close">Close</string>
+    <string name="image_saved_for_date">your image is saved</string>
+    <string name="tap_here_to_start_recording_your_daily_message">Tap here to start recording your daily message</string>
+    <string name="select_the_date_you_want_to_edit">Select the date you want to edit</string>
+    <string name="tap_to_choose_a_design_for_your_tape">Tap to choose a design for your tape</string>
+    <string name="all_your_recordings_for_this_day_are_listed_here">All your recordings for this day are listed here</string>
+    <string name="add_an_image_for_this_date">Add an image for this date</string>
 </resources>

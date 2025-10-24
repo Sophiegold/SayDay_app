@@ -46,4 +46,10 @@
     <string name="yes">Да</string>
     <string name="no">Нет</string>
     <string name="close">Закрыть</string>
+    <string name="image_saved_for_date">Ваше изображение сохранено</string>
+    <string name="tap_here_to_start_recording_your_daily_message">Нажмите здесь, чтобы начать запись своего ежедневного сообщения</string>
+    <string name="select_the_date_you_want_to_edit">Выберите дату</string>
+    <string name="tap_to_choose_a_design_for_your_tape">Нажмите, чтобы выбрать дизайн вашей кассеты</string>
+    <string name="all_your_recordings_for_this_day_are_listed_here">Все ваши записи за этот день отображаются здесь</string>
+    <string name="add_an_image_for_this_date">Добавьте изображение для этой даты</string>
 </resources>

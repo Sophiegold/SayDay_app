@@ -46,4 +46,10 @@
     <string name="yes">כן</string>
     <string name="no">לא</string>
     <string name="close">לסגור</string>
+    <string name="image_saved_for_date">תמונתך נשמרה</string>
+    <string name="tap_here_to_start_recording_your_daily_message">לחץ/י כאן לתחילת ההקלטה</string>
+    <string name="select_the_date_you_want_to_edit">בחר/י תאריך</string>
+    <string name="tap_to_choose_a_design_for_your_tape">לחץ/י לבחירת הקלטת</string>
+    <string name="all_your_recordings_for_this_day_are_listed_here">רשימת ההקלטות מוצגת כאן</string>
+    <string name="add_an_image_for_this_date">הוספת תמונה לתאריך זה</string>
 </resources>
