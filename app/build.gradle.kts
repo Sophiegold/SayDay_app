@@ -12,8 +12,8 @@ android {
         applicationId = "com.sophiegold.app_sayday"
         minSdk = 24
         targetSdk = 36
-        versionCode = 6
-        versionName = "1.2.4"
+        versionCode = 11
+        versionName = "1.2.8"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -46,11 +46,11 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     implementation("com.prolificinteractive:material-calendarview:1.4.3")
-    // Core Splash Screen API (Android 12+ compatible)
+    implementation("androidx.security:security-crypto:1.1.0")
     implementation("androidx.core:core-splashscreen:1.0.1")
-
     implementation("com.github.Baseflow:PhotoView:2.3.0")
     implementation("com.github.bumptech.glide:glide:4.16.0")
+    implementation("com.google.code.findbugs:jsr305:3.0.2")
 // Animation support
     implementation("androidx.dynamicanimation:dynamicanimation:1.0.0")
 // If you want to use Lottie animations for more advanced splash screens

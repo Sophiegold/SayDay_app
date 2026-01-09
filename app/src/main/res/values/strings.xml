@@ -63,9 +63,66 @@
     <string name="no">No</string>
     <string name="close">Close</string>
     <string name="image_saved_for_date">your image is saved</string>
-    <string name="tap_here_to_start_recording_your_daily_message">Tap here to start recording your daily message</string>
+    <string name="tap_here_to_start_recording_your_daily_message">Tap here to start recording</string>
     <string name="select_the_date_you_want_to_edit">Select the date you want to edit</string>
     <string name="tap_to_choose_a_design_for_your_tape">Tap to choose a design for your tape</string>
     <string name="all_your_recordings_for_this_day_are_listed_here">All your recordings for this day are listed here</string>
     <string name="add_an_image_for_this_date">Add an image for this date</string>
+    <string name="got_it">Got it</string>
+    <string name="privacy_note">Privacy Note</string>
+    <string name="open_date_choice_title">Capture Today’s story or Revisit a last one</string>
+    <string name="open_date_choice_msg">Do you want to add a record for today or review the last recording you made?</string>
+    <string name="add_for_today">Add for Today</string>
+    <string name="review_last">Review Last</string>
+    <string name="lock_settings">Locking Settings</string>
+    <string name="password">Password</string>
+    <string name="confirm_password">Confirm password</string>
+    <string name="lock_strong_warning">This password cannot be recovered. If you forget it you will lose access to the locked features. You will be required to enter it each time you open the app.</string>
+
+    <!-- Lock UI -->
+    <string name="set_password">Set password</string>
+    <string name="password_cannot_be_empty">Password cannot be empty.</string>
+    <string name="passwords_do_not_match">Passwords do not match.</string>
+
+    <!-- Strong warning shown when user sets a password -->
+    <string name="lock_enabled_success">Lock enabled. Remember your password — it cannot be recovered.</string>
+    <string name="failed_to_enable_lock">Failed to enable lock.</string>
+
+    <!-- Unlock UI -->
+    <string name="unlock">Unlock</string>
+    <string name="enter_password_to_unlock">Enter password to unlock the app.</string>
+    <string name="unlocked">Unlocked</string>
+    <string name="incorrect_password">Incorrect password.</string>
+    <string name="exit">Exit</string>
+
+    <!-- Nudge / suggestion -->
+    <string name="lock_suggestion_title">Protect your app</string>
+    <string name="lock_suggestion_msg">You can protect your recordings with a password. Would you like to enable the lock now?</string>
+    <string name="enable_lock">Enable lock</string>
+    <string name="remind_me_later">Remind me later</string>
+    <string name="dont_show_again">Dont show again</string>
+
+    <!-- Change / disable flows -->
+    <string name="lock_disabled_success">Lock disabled.</string>
+    <string name="verify_current_password">Verify current password</string>
+    <string name="verify">Verify</string>
+    <string name="disable">Disable</string>
+    <string name="disable_lock">Disable lock</string>
+    <string name="change_password">Change password</string>
+    <string name="lock_on">Lock: ON</string>
+    <string name="lock_off">Lock: OFF</string>
+    <string name="confirm_disable_lock">Disable lock? This will remove the saved password.</string>
+    <string name="disable_lock_success">Lock disabled</string>
+    <string name="failed_to_save_image" />
+    <string name="lock_status" />
+    <string name="enter_password_to_disable_lock" />
+    <string name="enter_password_to_lockoff" />
+    <string name="close_app">Close App</string>
+    <string name="exit_confirm_message" />
+    <string name="delete_all">Delete All</string>
+    <string name="delete_all_recordings">Delete All Recordings</string>
+    <string name="delete_all_confirmation_message">Are you sure you want to delete all recordings for this date? This action cannot be undone.</string>
+    <string name="all_recordings_deleted">All recordings have been deleted.</string>
+    <string name="no_recordings_to_delete">There are no recordings to delete.</string>
+
 </resources>

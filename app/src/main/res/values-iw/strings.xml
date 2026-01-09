@@ -52,4 +52,60 @@
     <string name="tap_to_choose_a_design_for_your_tape">לחץ/י לבחירת הקלטת</string>
     <string name="all_your_recordings_for_this_day_are_listed_here">רשימת ההקלטות מוצגת כאן</string>
     <string name="add_an_image_for_this_date">הוספת תמונה לתאריך זה</string>
+    <string name="got_it">הכל ברור</string>
+    <string name="privacy_note">הודעת פרטיות</string>
+    <string name="open_date_choice_title">כתוב את סיפור היום או חזור לעבר</string>
+    <string name="open_date_choice_msg">האם תרצה להוסיף רשומה להיום או לעיין ברשומה האחרונה שיצרת?</string>
+    <string name="add_for_today">הוסף להיום</string>
+    <string name="review_last">עיין באחרונה</string>
+    <string name="lock_settings">הגדרות נעילה</string>
+    <string name="password">סיסמה</string>
+    <string name="confirm_password">אשר סיסמה</string>
+    <string name="lock_strong_warning">סיסמה זו אינה ניתנת לשחזור. אם תשכחו אותה תאבדו גישה לאפליקציה. יהיה עליכם להזין אותה בכל פתיחת האפליקציה.</string>
+    <!-- Lock UI - Hebrew -->
+    <string name="set_password">הגדר סיסמה</string>
+    <string name="password_cannot_be_empty">הסיסמה לא יכולה להיות ריקה.</string>
+    <string name="passwords_do_not_match">הסיסמאות אינן תואמות.</string>
+
+    <!-- Strong warning shown when user sets a password -->
+    <string name="lock_enabled_success">הנעילה הופעלה. זכרו את הסיסמה — היא לא ניתנת לשחזור.</string>
+    <string name="failed_to_enable_lock">הפעלת הנעילה נכשלה.</string>
+
+    <!-- Unlock UI -->
+    <string name="unlock">פתח</string>
+    <string name="enter_password_to_unlock">הזן סיסמה כדי לפתוח את האפליקציה.</string>
+    <string name="unlocked">נפתח</string>
+    <string name="incorrect_password">סיסמה שגויה.</string>
+    <string name="exit">יציאה</string>
+
+    <!-- Nudge / suggestion -->
+    <string name="lock_suggestion_title">הגן על האפליקציה</string>
+    <string name="lock_suggestion_msg">אתה יכול להגן על ההקלטות שלך באמצעות סיסמה. האם ברצונך להפעיל נעילה כעת?</string>
+    <string name="enable_lock">הפעל נעילה</string>
+    <string name="remind_me_later">תזכיר לי מאוחר יותר</string>
+    <string name="dont_show_again">אל להראות שוב</string>
+
+    <!-- Change / disable flows -->
+    <string name="lock_disabled_success">הנעילה בוטלה.</string>
+    <string name="verify_current_password">אמת את הסיסמה הנוכחית</string>
+    <string name="verify">אמת</string>
+    <string name="disable">בטל</string>
+    <string name="disable_lock">בטל נעילה</string>
+    <string name="change_password">שנה סיסמה</string>
+    <string name="lock_on">נעילה: מופעלת</string>
+    <string name="lock_off">נעילה: כבויה</string>
+    <string name="confirm_disable_lock">לבטל את הנעילה? פעולה זו תסיר את הסיסמה השמורה.</string>
+    <string name="disable_lock_success">הנעילה בוטלה</string>
+    <string name="failed_to_save_image" />
+    <string name="lock_status" />
+    <string name="enter_password_to_disable_lock" />
+    <string name="enter_password_to_lockoff" />
+    <string name="close_app">סגור אפליקציה</string>
+    <string name="exit_confirm_message">האם את/ה בטוח רוצה לסגור אפליקציה?</string>
+    <string name="delete_all">מחק הכל</string>
+    <string name="delete_all_recordings">מחיקת כל ההקלטות</string>
+    <string name="delete_all_confirmation_message">האם אתה בטוח שברצונך למחוק את כל ההקלטות עבור תאריך זה? פעולה זו לא ניתנת לביטול.</string>
+    <string name="all_recordings_deleted">כל ההקלטות נמחקו.</string>
+    <string name="no_recordings_to_delete">אין הקלטות למחיקה.</string>
+
 </resources>

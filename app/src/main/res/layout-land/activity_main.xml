@@ -4,13 +4,15 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_app">
+    android:background="@drawable/bg_app"
+    android:fitsSystemWindows="true">
 
     <!-- TOP APP BAR / TOOLBAR AT THE VERY TOP -->
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/topAppBar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:fitsSystemWindows="true"
         android:background="@color/black"
         android:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar"
         app:title="SayDay"

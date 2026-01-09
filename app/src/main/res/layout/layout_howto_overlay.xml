@@ -64,11 +64,20 @@
             android:gravity="end"
             android:layout_marginTop="12dp">
 
-            <Button
-                android:id="@+id/btnGotIt"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Got it" />
-        </LinearLayout>
-    </LinearLayout>
+            <!--<Button
+              android:id="@+id/btnGotIt"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:text="Got it" /> -->
+
+      </LinearLayout>
+  </LinearLayout>
+  <FrameLayout
+      android:id="@+id/howtoTipsContainer"
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"
+      android:clickable="false"
+      android:focusable="false"
+      android:layout_marginTop="0dp"
+      android:layout_marginBottom="0dp" />
 </FrameLayout>

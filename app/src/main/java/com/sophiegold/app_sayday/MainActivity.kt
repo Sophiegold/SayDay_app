@@ -1,10 +1,17 @@
 package com.sophiegold.app_sayday
 
+import androidx.appcompat.app.AlertDialog as AppAlertDialog
+import android.view.View as AndroidView
+import android.view.inputmethod.EditorInfo
+import android.widget.LinearLayout
+import android.text.InputType
+import android.widget.Toast
+import android.widget.EditText
+import android.widget.TextView
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
-import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Bitmap
@@ -14,25 +21,28 @@ import android.graphics.Matrix
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.*
-import android.provider.MediaStore
 import android.util.Log
+import android.util.TypedValue
 import android.view.Gravity
+import android.view.Menu
+import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import android.view.animation.AnimationUtils
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.view.ContextThemeWrapper
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.content.res.ResourcesCompat
 import androidx.exifinterface.media.ExifInterface
 import com.bumptech.glide.Glide
-import com.github.chrisbanes.photoview.PhotoView
 import com.prolificinteractive.materialcalendarview.CalendarDay
 import com.prolificinteractive.materialcalendarview.DayViewDecorator
 import com.prolificinteractive.materialcalendarview.DayViewFacade
@@ -64,6 +74,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var addImageButton: ImageButton
     private lateinit var myImage: FrameLayout // For image feature
 
+    private var isUnlocked = false
+    private var isUnlockDialogShowing = false
+
     private val PREFS_HOWTO_KEY = "prefs_howto"
     private val PREFS_KEY_FIRST_LAUNCH_HOWTO = "first_launch_howto"
 
@@ -71,7 +84,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var howtoOverlay: FrameLayout
     private lateinit var howtoPanel: View
     private var btnCloseOverlay: View? = null
-    private var btnGotIt: View? = null
+
     private var howtoContentContainer: ViewGroup? = null
 
     // Recording Management
@@ -103,6 +116,9 @@ class MainActivity : AppCompatActivity() {
         private const val MAX_RECORDING_DURATION = 2_400_000L
         private const val SELECTED_DAYTITLE_COLOR_KEY = "selected_daytitle_color"
         private const val BDAY_DATES_KEY = "bday_dates"
+
+        // Option B: keep per-date content URI mapping, but cache today's image locally at this path (overwritten)
+        private const val TODAY_LOCAL_PATH_KEY = "today_local_path"
     }
 
     data class RecordingInfo(
@@ -121,40 +137,131 @@ class MainActivity : AppCompatActivity() {
         R.drawable.des_ufo to R.color.colorUfo
     )
 
-    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        Log.d("ImagePicker", "Received URI: $uri (pendingDate=$pendingImageDate)")
-
-        val targetDate = pendingImageDate ?: selectedDate
-        // clear pendingDate now that we have the result
-        pendingImageDate = null
-
-        if (uri != null) {
-            try {
-                // store persistable permission if available
-                contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            } catch (e: SecurityException) {
-                Log.w("ImagePicker", "Persist permission failed: ${e.message}")
-            }
-
-            val mimeType = contentResolver.getType(uri)
-            if (mimeType?.startsWith("image/") == true) {
-                imageUrisByDate[targetDate] = uri.toString()
-                saveImageUris()
-
-                // If the image is for the currently visible date, update UI now
-                if (targetDate == selectedDate) {
-                    updateMyImage()
-                } else {
-                    // optionally notify user that image was saved for another date
-
-                }
-            } else {
-                Toast.makeText(this, "Selected file is not an image", Toast.LENGTH_SHORT).show()
-            }
-        } else {
-            Toast.makeText(this, "No image selected", Toast.LENGTH_SHORT).show()
+    // ----------------------------
+    // Helper functions for Option B
+    // ----------------------------
+    private fun getTodayLocalPath(): String? {
+        return try {
+            prefs.getString(TODAY_LOCAL_PATH_KEY, null)
+        } catch (e: Exception) {
+            null
         }
     }
+
+    private fun setTodayLocalPath(path: String?) {
+        try {
+            prefs.edit().putString(TODAY_LOCAL_PATH_KEY, path).apply()
+        } catch (_: Exception) { }
+    }
+
+    private fun saveImageToInternalStorage(pickedUri: Uri, targetDate: String): String? {
+        return try {
+            val imagesDir = File(filesDir, "images")
+            if (!imagesDir.exists()) imagesDir.mkdirs()
+
+            // Use the date in the filename so each day is unique
+            val filename = "image_$targetDate.jpg"
+            val outFile = File(imagesDir, filename)
+
+            contentResolver.openInputStream(pickedUri)?.use { input ->
+                FileOutputStream(outFile).use { output ->
+                    input.copyTo(output)
+                }
+            } ?: return null
+
+            return outFile.absolutePath
+        } catch (e: Exception) {
+            Log.w("MainActivity", "saveImageToInternalStorage failed: ${e.message}")
+            null
+        }
+    }
+
+
+    private fun deleteTodayLocalImage(): Boolean {
+        val path = getTodayLocalPath() ?: return false
+        return try {
+            val f = File(path)
+            val deleted = if (f.exists()) f.delete() else true
+            setTodayLocalPath(null)
+            deleted
+        } catch (e: Exception) {
+            Log.w("MainActivity", "deleteTodayLocalImage failed: ${e.message}")
+            false
+        }
+    }
+
+    private fun decodeBitmapFromFileWithExif(path: String): Bitmap? {
+        return try {
+            val file = File(path)
+            if (!file.exists()) return null
+            val bitmap = BitmapFactory.decodeFile(file.absolutePath) ?: return null
+
+            return try {
+                val exif = ExifInterface(file.absolutePath)
+                val orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
+                val matrix = Matrix()
+                when (orientation) {
+                    ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
+                    ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
+                    ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
+                    else -> return bitmap
+                }
+                Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+            } catch (e: Exception) {
+                bitmap
+            }
+        } catch (e: Exception) {
+            Log.w("MainActivity", "decodeBitmapFromFileWithExif failed: ${e.message}")
+            null
+        }
+    }
+
+    // ----------------------------
+    // Image picker -- replaced per Option B
+    // ----------------------------
+    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        val targetDate = pendingImageDate ?: selectedDate
+        pendingImageDate = null
+
+        if (uri == null) {
+            Toast.makeText(this, "No image selected", Toast.LENGTH_SHORT).show()
+            return@registerForActivityResult
+        }
+
+        try {
+            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            val todayStr = dateFormat.format(Date())
+
+            // Always try to persist the URI permission (harmless if it fails)
+            try {
+                contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            } catch (_: Exception) { }
+
+            if (targetDate == todayStr) {
+                executor.execute {
+                    val savedPath = saveImageToInternalStorage(uri, targetDate)
+                    handler.post {
+                        if (savedPath != null) {
+                            imageUrisByDate[targetDate] = uri.toString()
+                            setTodayLocalPath(savedPath) // still keep a quick pointer for today
+                            saveImageUris()
+                            updateMyImage()
+                        } else {
+                            Toast.makeText(this, getString(R.string.failed_to_save_image), Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            } else {
+                imageUrisByDate[targetDate] = uri.toString()
+                saveImageUris()
+                updateMyImage()
+            }
+        } catch (e: Exception) {
+            Log.w("MainActivity", "pickImageLauncher: unexpected error ${e.message}")
+            Toast.makeText(this, getString(R.string.failed_to_save_image), Toast.LENGTH_SHORT).show()
+        }
+    }
+
 
     private val selectLogoLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -212,6 +319,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // Warm up encrypted prefs
+        LockManager.initialize(this)
+        LockManager.migratePlainIfNeeded(this)
+
         // Initialize SharedPreferences
         prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
 
@@ -228,36 +339,88 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+
         // Toolbar
         val topAppBar = findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.topAppBar)
         setSupportActionBar(topAppBar)
+
         topAppBar.setNavigationOnClickListener { view ->
+            // Wrap context with your dark popup theme overlay
             val popup = PopupMenu(this, view)
-            popup.menuInflater.inflate(R.menu.top_appbar_menu, popup.menu)
+            popup.menuInflater.inflate(R.menu.top_appbar_popup, popup.menu)
+
+
+
+            // Handle menu item clicks
             popup.setOnMenuItemClickListener { menuItem ->
                 when (menuItem.itemId) {
                     R.id.menu_howto -> {
-                        // make sure to show after layout as well
                         window.decorView.post { showHowtoOverlay() }
                         true
                     }
                     R.id.menu_archive -> { archiveRecordings(this); true }
+                    R.id.menu_privacy -> {
+                        val privacyUrl = "https://github.com/Sophiegold/SayDay_app/blob/master/Audio_Privacy_Policy"
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(privacyUrl))
+                        startActivity(intent)
+                        true
+                    }
+                    R.id.menu_close_app -> {
+                        // Confirm then exit gracefully
+                        AlertDialog.Builder(this)
+                            .setTitle(getString(R.string.exit))
+                            .setMessage(getString(R.string.exit_confirm_message).ifEmpty { "Are you sure you want to close the app?" })
+                            .setPositiveButton(getString(R.string.yes)) { _, _ ->
+                                // Save UI/data state synchronously before exit
+                                try {
+                                    saveDayTitle()
+                                    saveData()
+                                    saveImageUris()
+                                } catch (e: Exception) {
+                                    Log.w("MainActivity", "Error saving state before exit: ${e.message}")
+                                }
+
+                                // Optionally stop any ongoing recording or timers
+                                try { stopRecordingTimer() } catch (_: Exception) {}
+                                try { audioManager.cleanup() } catch (_: Exception) {}
+
+                                // Close the app
+                                finishAffinity()
+                            }
+                            .setNegativeButton(getString(R.string.no), null)
+                            .show()
+                        true
+                    }
+
+
                     else -> false
                 }
             }
+
+            // Show only once, after everything is set up
             popup.show()
         }
+
         topAppBar.title = "SayDay"
 
         setupUI()
+
+        // Load recordings/titles/birthdays but do NOT set an active selectedDate here.
+        // We'll prompt the user on startup (or auto-select today if no last saved date).
         loadData()
+
+        // Always auto-select today's date on startup (do not show the startup choice dialog)
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val todayStr = dateFormat.format(Date())
+        selectDate(todayStr)
+
+        // Continue other initialization
         checkPermissions()
-        updateDateButton()
-        updateDayTitle()
-        updateRecordingsList()
         startButtonAnimations()
         loadImageUris()
-        updateMyImage()
+
+        // ensure image is updated for any current selection
+        myImage.post { updateMyImage() }
 
         // Brush / design selection
         findViewById<ImageView>(R.id.brushIcon)?.setOnClickListener {
@@ -266,6 +429,140 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.top_appbar_menu, menu)
+        val lockItem = menu.findItem(R.id.menu_lock_toggle)
+        val lockEnabled = LockManager.isLockEnabled(this)
+        lockItem.icon = ContextCompat.getDrawable(
+            this,
+            if (lockEnabled) R.drawable.ic_lock_enabled else R.drawable.ic_lock_disabled
+        )
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.menu_lock_toggle -> {
+                if (LockManager.isLockEnabled(this)) {
+                    // 🔓 Lock is currently enabled → verify before disabling
+                    showUnlockDialogForDisable(item)
+                } else {
+                    // 🔒 Lock is currently disabled → set password to enable
+                    showSetPasswordDialog { passwordCharArray ->
+                        LockManager.savePassword(this, passwordCharArray)
+                        Toast.makeText(this, getString(R.string.lock_enabled_success), Toast.LENGTH_SHORT).show()
+                        passwordCharArray.fill('\u0000')
+                        item.icon = ContextCompat.getDrawable(this, R.drawable.ic_lock_enabled)
+                    }
+                }
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+
+
+    override fun onResume() {
+        super.onResume()
+        LockManager.migratePlainIfNeeded(this)
+
+        // Only enforce on true app start; do not force lock on every resume
+        if (LockManager.isLockEnabled(this) && !isUnlocked && !isUnlockDialogShowing) {
+            showUnlockDialog()
+        }
+    }
+
+    private fun showUnlockDialogForDisable(lockItem: MenuItem) {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_unlock_password, null)
+        val etPassword = dialogView.findViewById<EditText>(R.id.etPassword)
+        val tvError = dialogView.findViewById<TextView>(R.id.tvPasswordError)
+
+        val dialog = AlertDialog.Builder(this)
+            .setTitle(getString(R.string.unlock))
+            .setMessage(getString(R.string.enter_password_to_lockoff))
+            .setView(dialogView)
+            .setPositiveButton(getString(R.string.disable_lock), null)
+            .setNegativeButton(getString(R.string.cancel), null)
+            .create()
+
+        dialog.setOnShowListener {
+            val positive = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            positive.setOnClickListener {
+                val inputChars = etPassword.text?.toString()?.toCharArray() ?: charArrayOf()
+                executor.execute {
+                    val ok = LockManager.verifyPassword(this, inputChars)
+                    inputChars.fill('\u0000')
+                    handler.post {
+                        if (ok) {
+                            LockManager.clearLock(this)
+                            Toast.makeText(this, getString(R.string.lock_disabled_success), Toast.LENGTH_SHORT).show()
+                            lockItem.icon = ContextCompat.getDrawable(this, R.drawable.ic_lock_disabled)
+                            dialog.dismiss()
+                        } else {
+                            tvError.text = getString(R.string.incorrect_password)
+                            tvError.visibility = View.VISIBLE
+                        }
+                    }
+                }
+            }
+        }
+        dialog.show()
+        etPassword.requestFocus()
+    }
+
+
+    private fun showUnlockDialog() {
+        if (isUnlocked || isUnlockDialogShowing) return
+        isUnlockDialogShowing = true
+
+        val dialogView = layoutInflater.inflate(R.layout.dialog_unlock_password, null)
+        val etPassword = dialogView.findViewById<EditText>(R.id.etPassword)
+        val tvError = dialogView.findViewById<TextView>(R.id.tvPasswordError)
+
+        val dialog = AppAlertDialog.Builder(this)
+            .setTitle(getString(R.string.unlock))
+            .setMessage(getString(R.string.enter_password_to_unlock))
+            .setCancelable(false)
+            .setView(dialogView)
+            .setPositiveButton(getString(R.string.unlock), null)
+            .setNegativeButton(getString(R.string.exit)) { _, _ ->
+                isUnlockDialogShowing = false
+                finishAffinity()
+            }
+            .create()
+
+        dialog.setOnShowListener {
+            val positive = dialog.getButton(AppAlertDialog.BUTTON_POSITIVE)
+            positive.setOnClickListener {
+                val inputChars = etPassword.text?.toString()?.toCharArray() ?: charArrayOf()
+                executor.execute {
+                    var ok = LockManager.verifyPassword(this@MainActivity, inputChars)
+                    if (!ok) {
+                        LockManager.initialize(this@MainActivity)
+                        ok = LockManager.verifyPassword(this@MainActivity, inputChars)
+                    }
+                    inputChars.fill('\u0000')
+                    handler.post {
+                        if (ok) {
+                            isUnlocked = true
+                            isUnlockDialogShowing = false
+                            dialog.dismiss()
+                            val todayStr = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+                            selectDate(todayStr)
+                            loadImageUris()
+                            myImage.post { updateMyImage() }
+                        } else {
+                            tvError.text = getString(R.string.incorrect_password)
+                            tvError.visibility = View.VISIBLE
+                        }
+                    }
+                }
+            }
+        }
+        dialog.show()
+        etPassword.requestFocus()
+    }
 
 
     private fun initializeComponents() {
@@ -282,9 +579,24 @@ class MainActivity : AppCompatActivity() {
         bdayImage = findViewById(R.id.check_Bday)
         addImageButton = findViewById(R.id.addImageButton)
         myImage = findViewById(R.id.myImage) // For image feature
+        tapeLogoImageView = findViewById(R.id.tapeLogo)
 
         audioManager = AudioRecordingManager(this)
         prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+
+        val savedLogoResId = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+            .getInt(TAPE_LOGO_KEY, -1)
+
+        if (savedLogoResId != -1) {
+            tapeLogoImageView.setImageResource(savedLogoResId)
+
+            // Also restore the text color for dayTitle
+            val savedColorResId = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+                .getInt(SELECTED_DAYTITLE_COLOR_KEY, R.color.defaultDayTitleColor)
+            val color = ContextCompat.getColor(this, savedColorResId)
+            dayTitle.setTextColor(color)
+            dayTitle.setHintTextColor(color)
+        }
 
         bdayImage.setOnClickListener {
             if (selectedDate.isNotEmpty()) {
@@ -319,34 +631,38 @@ class MainActivity : AppCompatActivity() {
 
         // Image view click for deletion
         myImage.setOnClickListener {
-            if (imageUrisByDate.containsKey(selectedDate)) {
+            if (imageUrisByDate.containsKey(selectedDate) || getTodayLocalPath() != null) {
                 AlertDialog.Builder(this)
                     .setTitle(getString(R.string.delete_image_msg))
                     .setMessage(getString(R.string.are_you_sure_you_want_to_delete_this_image))
                     .setPositiveButton(getString(R.string.yes)) { _, _ ->
-                        imageUrisByDate.remove(selectedDate)
-                        saveImageUris()
-                        updateMyImage()
+                        executor.execute {
+                            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                            val todayStr = dateFormat.format(Date())
+                            // If this is today's image, delete the internal cached copy too
+                            if (selectedDate == todayStr) {
+                                deleteTodayLocalImage()
+                            }
+                            // If there is a content URI stored for this date, try to release persisted permission
+                            val stored = imageUrisByDate[selectedDate]
+                            if (!stored.isNullOrEmpty() && stored.startsWith("content://")) {
+                                try {
+                                    val oldUri = Uri.parse(stored)
+                                    contentResolver.releasePersistableUriPermission(oldUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                } catch (_: Exception) { }
+                            }
+                            // Remove mapping & persist
+                            imageUrisByDate.remove(selectedDate)
+                            saveImageUris()
+                            handler.post { updateMyImage() }
+                        }
                     }
                     .setNegativeButton(getString(R.string.no), null)
                     .show()
             }
         }
         val minusIcon = findViewById<ImageButton>(R.id.minusIcon)
-        minusIcon.setOnClickListener {
-            if (imageUrisByDate.containsKey(selectedDate)) {
-                AlertDialog.Builder(this)
-                    .setTitle(getString(R.string.delete_image_msg))
-                    .setMessage(getString(R.string.are_you_sure_you_want_to_delete_this_image))
-                    .setPositiveButton(getString(R.string.yes)) { _, _ ->
-                        imageUrisByDate.remove(selectedDate)
-                        saveImageUris()
-                        updateMyImage()
-                    }
-                    .setNegativeButton(getString(R.string.no), null)
-                    .show()
-            }
-        }
+        minusIcon.setOnClickListener { myImage.performClick() }
     }
 
     private fun setupUI() {
@@ -467,6 +783,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+
     private fun loadData() {
         val recordingsJson = prefs.getString(RECORDINGS_KEY, "{}")
         try {
@@ -511,8 +828,10 @@ class MainActivity : AppCompatActivity() {
             dayTitlesByDate.clear()
         }
 
-        selectedDate = prefs.getString(SELECTED_DATE_KEY, "") ?: ""
-        recordButton.isEnabled = selectedDate.isNotEmpty()
+        // Do NOT set selectedDate here. We'll decide in onCreate whether to prompt the user
+        // or auto-select today. Leave selectedDate empty and recordButton disabled until selection.
+        selectedDate = ""
+        recordButton.isEnabled = false
 
         val bdayJson = prefs.getString(BDAY_DATES_KEY, "[]")
         try {
@@ -523,17 +842,18 @@ class MainActivity : AppCompatActivity() {
             bdayDates.clear()
         }
 
-        if (selectedDate.isEmpty()) {
-            val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-            selectedDate = today
-            val cal = Calendar.getInstance()
-            calendarView.selectedDate =
-                CalendarDay.from(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH))
-        }
-        recordButton.isEnabled = selectedDate.isNotEmpty()
+        // Ensure calendar shows today's month but do NOT select a date yet.
+        val todayDay = CalendarDay.today()
+        calendarView.currentDate = todayDay
+        calendarView.selectedDate = null
+
         updateCalendarIndicators()
         updateBdayIconState()
-        updateMyImage() // Update image for current date
+
+        // Only update the image at startup if the app is unlocked or locking is disabled.
+        if (!LockManager.isLockEnabled(this) || isUnlocked) {
+            updateMyImage()
+        }
     }
 
     private fun saveData() {
@@ -614,6 +934,75 @@ class MainActivity : AppCompatActivity() {
         saveData()
         updateBdayIconState()
         updateMyImage() // Update image when date changes
+    }
+
+    // Helper that centralizes selecting a date and updating UI/state.
+    private fun selectDate(dateString: String) {
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        selectedDate = dateString
+
+        try {
+            val parsed = dateFormat.parse(dateString)
+            if (parsed != null) {
+                val cal = Calendar.getInstance().apply { time = parsed }
+                val day = CalendarDay.from(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH))
+                calendarView.selectedDate = day
+                calendarView.currentDate = day
+            } else {
+                val today = CalendarDay.today()
+                calendarView.selectedDate = today
+                calendarView.currentDate = today
+            }
+        } catch (e: Exception) {
+            val today = CalendarDay.today()
+            calendarView.selectedDate = today
+            calendarView.currentDate = today
+        }
+
+        recordButton.isEnabled = selectedDate.isNotEmpty()
+        updateDateButton()
+        updateDayTitle()
+        updateRecordingsList()
+        updateBdayIconState()
+        updateMyImage()
+
+        // Persist the user's chosen date
+        saveData()
+    }
+
+    // Startup dialog asking user to choose Today or Last saved date.
+    private fun showStartupChoiceDialog() {
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val todayStr = dateFormat.format(Date())
+        val lastSaved = prefs.getString(SELECTED_DATE_KEY, "") ?: ""
+
+        // If there's no lastSaved we should not show the dialog (caller handles that case),
+        // but guard here as well.
+        if (lastSaved.isEmpty()) {
+            selectDate(todayStr)
+            return
+        }
+
+        val builder = AlertDialog.Builder(this)
+            .setTitle(getString(R.string.open_date_choice_title).ifEmpty { "Open date" })
+            .setMessage(getString(R.string.open_date_choice_msg)
+                .ifEmpty { "Do you want to add a record for today or review the last recording you made?" })
+            .setCancelable(false)
+            .setPositiveButton(getString(R.string.add_for_today).ifEmpty { "Add for Today" }) { _, _ ->
+                selectDate(todayStr)
+            }
+            .setNegativeButton(getString(R.string.review_last).ifEmpty { "Review Last" }) { _, _ ->
+                // If lastSaved isn't parseable, fallback to today
+                selectDate(lastSaved)
+            }
+
+        val dialog = builder.create()
+        dialog.show()
+
+        // Disable "Review Last" if there is no last saved date (defensive)
+        if (lastSaved.isEmpty()) {
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).isEnabled = false
+        }
     }
 
     private fun updateDateButton() {
@@ -716,6 +1105,7 @@ class MainActivity : AppCompatActivity() {
     private fun updateRecordingsList() {
         recordingsList.removeAllViews()
         val todaysRecordings = recordingsByDate[selectedDate] ?: emptyList()
+
         if (todaysRecordings.isEmpty()) {
             val noText = TextView(this).apply {
                 text = context.getString(R.string.no_recordings_yet_for_this_date)
@@ -728,7 +1118,25 @@ class MainActivity : AppCompatActivity() {
             recordingsList.addView(noText)
             return
         }
-        todaysRecordings.sortedByDescending { it.timestamp }.forEach { recording -> createRecordingRow(recording) }
+
+        // Add rows for recordings
+        todaysRecordings.sortedByDescending { it.timestamp }.forEach { recording ->
+            createRecordingRow(recording)
+        }
+
+        // Add "Delete All" button at the bottom
+        val deleteAllBtn = Button(this).apply {
+            text = getString(R.string.delete_all)
+            setOnClickListener {
+                confirmAndDeleteAllRecordings()
+            }
+            setBackgroundColor(ContextCompat.getColor(this@MainActivity, R.color.orange))
+            setTextColor(Color.WHITE) // Optional: Make text white for contrast
+            setPadding(16, 16, 16, 16)
+        }
+        recordingsList.addView(deleteAllBtn)
+
+        // Scroll to the bottom of the recordings list
         recordingsScroll.post { recordingsScroll.fullScroll(ScrollView.FOCUS_DOWN) }
     }
 
@@ -781,6 +1189,40 @@ class MainActivity : AppCompatActivity() {
         row.addView(playButton)
         row.addView(deleteButton)
         recordingsList.addView(row)
+    }
+
+    private fun confirmAndDeleteAllRecordings() {
+        if (recordingsByDate[selectedDate].isNullOrEmpty()) {
+            showError(getString(R.string.no_recordings_to_delete))
+            return
+        }
+
+        // Show confirmation dialog
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.delete_all_recordings))
+            .setMessage(getString(R.string.delete_all_confirmation_message))
+            .setPositiveButton(getString(R.string.yes)) { _, _ -> deleteAllRecordings() }
+            .setNegativeButton(getString(R.string.cancel), null)
+            .show()
+    }
+
+    private fun deleteAllRecordings() {
+        executor.execute {
+            val filesToDelete = recordingsByDate[selectedDate]?.map { File(it.filePath) } ?: emptyList()
+
+            filesToDelete.forEach { file ->
+                if (file.exists()) file.delete()
+            }
+
+            recordingsByDate.remove(selectedDate)  // Clear all recordings for the selected date
+
+            handler.post {
+                updateRecordingsList()
+                updateCalendarIndicators()
+                saveData()  // Persist the changes
+                showSuccess(getString(R.string.all_recordings_deleted))
+            }
+        }
     }
 
     private fun togglePlayPause(filePath: String, button: ImageButton) {
@@ -895,10 +1337,11 @@ class MainActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
+
+        // Persist UI/data state
         saveDayTitle()
         saveData()
         saveImageUris()
-
     }
 
     private fun showError(message: String) { Toast.makeText(this, message, Toast.LENGTH_LONG).show() }
@@ -1021,67 +1464,146 @@ class MainActivity : AppCompatActivity() {
             }
         } catch (_: Exception) {}
     }
-
     private fun saveImageUris() {
         val obj = JSONObject()
         imageUrisByDate.forEach { (date, uri) -> obj.put(date, uri) }
         prefs.edit().putString(IMAGE_URIS_KEY, obj.toString()).apply()
     }
-
-
     private fun updateMyImage() {
-        val uriStr = imageUrisByDate[selectedDate]
         val myImage = findViewById<FrameLayout>(R.id.myImage)
         val myImageView = myImage.findViewById<ImageView>(R.id.myImageView)
 
-        if (uriStr != null) {
-            val uri = Uri.parse(uriStr)
-            try {
-                val bitmap = getCorrectlyOrientedBitmap(this, uri)
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val todayStr = dateFormat.format(Date())
+
+        // Prefer local cached file when viewing today
+        if (selectedDate == todayStr) {
+            val localPath = getTodayLocalPath()
+            if (!localPath.isNullOrEmpty()) {
+                val bitmap = decodeBitmapFromFileWithExif(localPath)
                 if (bitmap != null) {
                     myImageView.setImageBitmap(bitmap)
                     myImage.visibility = View.VISIBLE
 
-                    // Update myImageView to be 80% of parent size and centered
                     myImage.post {
                         val parentWidth = myImage.width
                         val parentHeight = myImage.height
-
                         val params = myImageView.layoutParams as FrameLayout.LayoutParams
                         params.width = (parentWidth * 0.83).toInt()
                         params.height = (parentHeight * 0.83).toInt()
                         params.gravity = Gravity.CENTER
                         myImageView.layoutParams = params
                     }
+                    return
                 } else {
+                    // local file missing or decode failed -> fall through to URI path if present
+                    setTodayLocalPath(null)
+                }
+            }
+        }
+
+        // Fallback to stored mapping (URI string)
+        val uriStr = imageUrisByDate[selectedDate]
+        if (uriStr != null) {
+            if (uriStr.startsWith("/")) {
+                // absolute file path
+                val bitmap = decodeBitmapFromFileWithExif(uriStr)
+                if (bitmap != null) {
+                    myImageView.setImageBitmap(bitmap)
+                    myImage.visibility = View.VISIBLE
+                    myImage.post {
+                        val parentWidth = myImage.width
+                        val parentHeight = myImage.height
+                        val params = myImageView.layoutParams as FrameLayout.LayoutParams
+                        params.width = (parentWidth * 0.83).toInt()
+                        params.height = (parentHeight * 0.83).toInt()
+                        params.gravity = Gravity.CENTER
+                        myImageView.layoutParams = params
+                    }
+                    return
+                } else {
+                    // stored internal file missing -> remove mapping
+                    imageUrisByDate.remove(selectedDate)
+                    saveImageUris()
                     myImage.visibility = View.GONE
                     val params = myImage.layoutParams
                     params.height = 0
                     myImage.layoutParams = params
                     myImageView.setImageDrawable(null)
+                    return
                 }
-            } catch (e: Exception) {
-                myImage.visibility = View.GONE
-                val params = myImage.layoutParams
-                params.height = 0
-                myImage.layoutParams = params
-                myImageView.setImageDrawable(null)
+            } else {
+                // content:// style URI
+                val uri = try { Uri.parse(uriStr) } catch (e: Exception) { null }
+                if (uri != null) {
+                    try {
+                        val bitmap = getCorrectlyOrientedBitmap(this, uri)
+                        if (bitmap != null) {
+                            myImageView.setImageBitmap(bitmap)
+                            myImage.visibility = View.VISIBLE
+                            myImage.post {
+                                val parentWidth = myImage.width
+                                val parentHeight = myImage.height
+                                val params = myImageView.layoutParams as FrameLayout.LayoutParams
+                                params.width = (parentWidth * 0.83).toInt()
+                                params.height = (parentHeight * 0.83).toInt()
+                                params.gravity = Gravity.CENTER
+                                myImageView.layoutParams = params
+                            }
+                            return
+                        } else {
+                            // decode failed
+                            if (myImageView.drawable == null) {
+                                myImage.visibility = View.GONE
+                                val params = myImage.layoutParams
+                                params.height = 0
+                                myImage.layoutParams = params
+                                myImageView.setImageDrawable(null)
+                            } else {
+                                myImage.visibility = View.VISIBLE
+                            }
+                            return
+                        }
+                    } catch (se: SecurityException) {
+                        Log.w("MainActivity", "updateMyImage: SecurityException opening uri: ${se.message}")
+                        if (myImageView.drawable == null) {
+                            myImage.visibility = View.GONE
+                            val params = myImage.layoutParams
+                            params.height = 0
+                            myImage.layoutParams = params
+                            myImageView.setImageDrawable(null)
+                        }
+                        return
+                    } catch (e: Exception) {
+                        Log.w("MainActivity", "updateMyImage: exception decoding uri: ${e.message}")
+                        if (myImageView.drawable == null) {
+                            myImage.visibility = View.GONE
+                            val params = myImage.layoutParams
+                            params.height = 0
+                            myImage.layoutParams = params
+                            myImageView.setImageDrawable(null)
+                        }
+                        return
+                    }
+                }
             }
-        } else {
-            myImage.visibility = View.GONE
-            val params = myImage.layoutParams
-            params.height = 0
-            myImage.layoutParams = params
-            myImageView.setImageDrawable(null)
         }
+
+        // No image mapping found
+        myImage.visibility = View.GONE
+        val params = myImage.layoutParams
+        params.height = 0
+        myImage.layoutParams = params
+        myImageView.setImageDrawable(null)
     }
 
 
 
-
+    private fun dp(v: Int): Int =
+        TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, v.toFloat(), resources.displayMetrics).toInt()
 
     private fun showHowtoOverlay() {
-        lockPortrait()
+
         // Initialize overlay components if needed
         if (!this::howtoOverlay.isInitialized) {
             howtoOverlay = findViewById(R.id.howtoOverlay)
@@ -1089,17 +1611,20 @@ class MainActivity : AppCompatActivity() {
 
             howtoPanel = findViewById(R.id.howtoPanel)
             btnCloseOverlay = findViewById(R.id.btnCloseOverlay)
-            btnGotIt = findViewById(R.id.btnGotIt)
+
 
             // Set up interactions
             howtoOverlay.setOnClickListener { hideHowtoOverlay() }
             howtoPanel.setOnClickListener { /* consume click */ }
             btnCloseOverlay?.setOnClickListener { hideHowtoOverlay() }
-            btnGotIt?.setOnClickListener { hideHowtoOverlay() }
+
         }
 
         // --- Detect current orientation ---
         val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+        // --- Compute horizontal shift for landscape (30dp to px) ---
+        val landShiftPx = if (isLandscape) dp(50) else 0
 
         // --- Show overlay with fade-in animation ---
         try {
@@ -1117,6 +1642,7 @@ class MainActivity : AppCompatActivity() {
         btnCloseOverlay?.requestFocus()
 
         // --- Clear any previous dynamic tips ---
+        // (we keep your behavior but apply horizontal shift for landscape)
         howtoOverlay.removeAllViews()
 
         // Helper to add a tip and arrow (each with independent offsets)
@@ -1143,7 +1669,8 @@ class MainActivity : AppCompatActivity() {
             val arrow = ImageView(this)
             arrow.setImageResource(arrowRes)
             val arrowParams = FrameLayout.LayoutParams(100, 100)
-            arrowParams.leftMargin = x + targetView.width / 2 - 50 + arrowOffsetX
+            // subtract landShiftPx from left margins to move tips left in landscape
+            arrowParams.leftMargin = x + targetView.width / 2 - 50 + arrowOffsetX - landShiftPx
             arrowParams.topMargin = y + yAdj
             howtoOverlay.addView(arrow, arrowParams)
 
@@ -1158,7 +1685,8 @@ class MainActivity : AppCompatActivity() {
                 FrameLayout.LayoutParams.WRAP_CONTENT,
                 FrameLayout.LayoutParams.WRAP_CONTENT
             )
-            tipParams.leftMargin = x + textOffsetX
+            // subtract landShiftPx from left margin for text as well
+            tipParams.leftMargin = x + textOffsetX - landShiftPx
             tipParams.topMargin = y + textYAdj
             howtoOverlay.addView(tip, tipParams)
         }
@@ -1169,7 +1697,7 @@ class MainActivity : AppCompatActivity() {
             getString(R.string.tap_here_to_start_recording_your_daily_message),
             R.drawable.ic_arrow_down,
             arrowOffsetY = -120,
-            textOffsetY = -270
+            textOffsetY = -230
         )
 
         addTip(
@@ -1201,24 +1729,11 @@ class MainActivity : AppCompatActivity() {
             getString(R.string.add_an_image_for_this_date),
             R.drawable.ic_arrow_down,
             arrowOffsetY = -160,
-            textOffsetY = -250
+            textOffsetY = -290
         )
 
-        // --- Got It button ---
-        val btnGotItDynamic = Button(this)
-        btnGotItDynamic.text = "Got It"
-        val btnParams = FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.WRAP_CONTENT,
-            FrameLayout.LayoutParams.WRAP_CONTENT
-        )
-        btnParams.gravity = Gravity.END or Gravity.BOTTOM
-        btnParams.bottomMargin = 50
-        btnParams.rightMargin = 30
-        howtoOverlay.addView(btnGotItDynamic, btnParams)
 
-        btnGotItDynamic.setOnClickListener {
-            howtoOverlay.visibility = View.GONE
-        }
+
     }
     private fun hideHowtoOverlay() {
         if (!this::howtoOverlay.isInitialized) return
@@ -1227,19 +1742,47 @@ class MainActivity : AppCompatActivity() {
             .setDuration(150)
             .withEndAction {
                 howtoOverlay.visibility = View.GONE
-                unlockOrientation()
+
             }
             .start()
     }
 
-    // Setting force lock portrait screen orientation for the howto screen
-    private fun lockPortrait() {
-        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-    }
-    private fun unlockOrientation() {
-        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-    }
+    private fun showSetPasswordDialog(onSave: (CharArray) -> Unit) {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_set_password, null)
+        val etPassword = dialogView.findViewById<EditText>(R.id.etPassword)
+        val etConfirmPassword = dialogView.findViewById<EditText>(R.id.etConfirmPassword)
+        val tvError = dialogView.findViewById<TextView>(R.id.tvPasswordError)
 
+        val dialog = AppAlertDialog.Builder(this)
+            .setTitle(getString(R.string.set_password))
+            .setMessage(getString(R.string.lock_strong_warning))
+            .setCancelable(false)
+            .setView(dialogView)
+            .setPositiveButton(getString(R.string.save), null)
+            .setNegativeButton(android.R.string.cancel, null)
+            .create()
+
+        dialog.setOnShowListener {
+            val positive = dialog.getButton(AppAlertDialog.BUTTON_POSITIVE)
+            positive.setOnClickListener {
+                val pwd = etPassword.text?.toString()?.toCharArray() ?: charArrayOf()
+                val confirm = etConfirmPassword.text?.toString()?.toCharArray() ?: charArrayOf()
+
+                if (pwd.isEmpty() || !pwd.contentEquals(confirm)) {
+                    tvError.text = getString(R.string.passwords_do_not_match)
+                    tvError.visibility = View.VISIBLE
+                    pwd.fill('\u0000')
+                    confirm.fill('\u0000')
+                    return@setOnClickListener
+                }
+
+                onSave(pwd)
+                dialog.dismiss()
+            }
+        }
+        dialog.show()
+        etPassword.requestFocus()
+    }
 
 
     // Decorators for calendar dots and birthdays
@@ -1251,12 +1794,5 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    class TodayDecorator(private val context: Context, private val day: CalendarDay) : DayViewDecorator {
-        override fun shouldDecorate(day: CalendarDay): Boolean = day == this.day
-        override fun decorate(view: DayViewFacade) { /* default */ }
-    }
-    class RecordingDotDecorator(private val context: Context, private val days: Collection<CalendarDay>) : DayViewDecorator {
-        override fun shouldDecorate(day: CalendarDay): Boolean = days.contains(day)
-        override fun decorate(view: DayViewFacade) { /* default */ }
-    }
+
 }

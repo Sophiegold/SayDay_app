@@ -1,14 +1,50 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
 
+    <style name="Theme.SayDay" parent="Theme.MaterialComponents.DayNight.NoActionBar"/>
+
     <!-- Base application theme -->
     <style name="Theme.AppSayday" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="colorPrimary">@color/black</item>
         <item name="colorPrimaryVariant">@color/black</item>
-        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorOnPrimary">@color/black</item>
         <item name="colorSecondary">@color/teal_200</item>
         <item name="colorSecondaryVariant">@color/teal_700</item>
         <item name="colorOnSecondary">@color/black</item>
         <item name="android:statusBarColor">#27262B</item>
+        <item name="alertDialogTheme">@style/MyGlobalAlertDialogTheme</item>
+        <item name="popupMenuStyle">@style/MyPopupMenu</item>
+        <item name="android:textAppearanceSmallPopupMenu">@style/MyPopupMenuTextSmall</item>
+        <item name="android:textAppearanceLargePopupMenu">@style/MyPopupMenuTextLarge</item>
+
+        <item name="android:spinnerDropDownItemStyle">@style/MyDropdownItem</item>
+    </style>
+
+    <style name="MyPopupTheme" parent="ThemeOverlay.AppCompat.Light">
+        <item name="android:popupBackground">@color/black</item>
+
+    </style>
+
+    <style name="MyPopupMenu" parent="Widget.AppCompat.PopupMenu">
+        <item name="android:popupBackground">@color/black</item>
+    </style>
+
+    <style name="MyPopupMenuTextSmall" parent="TextAppearance.AppCompat.Widget.PopupMenu.Small">
+        <item name="android:textColor">@color/light_gray</item>
+    </style>
+
+    <style name="MyPopupMenuTextLarge" parent="TextAppearance.AppCompat.Widget.PopupMenu.Large">
+        <item name="android:textColor">@color/light_gray</item>
+    </style>
+
+    <style name="MyDropdownItem" parent="TextAppearance.AppCompat.Body1">
+        <item name="android:textColor">@color/splash_background_light</item>
+        <item name="android:background">@color/black</item>
+    </style>
+
+    <style name="MyNavigationView" parent="Widget.MaterialComponents.NavigationView">
+        <item name="android:background">@color/black</item>
+        <item name="itemTextColor">@color/light_gray</item>
+        <item name="itemIconTint">@color/light_gray</item>
     </style>
 
     <!-- Splash Screen Theme -->
@@ -26,7 +62,7 @@
 
     <!-- Alternative Light Splash Theme -->
     <style name="SplashThemeLight" parent="Theme.MaterialComponents.Light.NoActionBar">
-        <item name="android:windowBackground">@color/splash_background_light</item>
+        <item name="android:windowBackground">@color/black</item>
         <item name="android:statusBarColor">@color/splash_background_light</item>
         <item name="android:navigationBarColor">@color/splash_background_light</item>
         <item name="android:windowLightStatusBar">true</item>
@@ -37,6 +73,47 @@
     </style>
 
 
+    <style name="MyPopupMenuItem" parent="Widget.AppCompat.TextView">
+        <item name="android:textColor">@color/light_gray</item>
+    </style>
+
+
+
+    <!-- Dialog overlay theme -->
+    <style name="MyGlobalAlertDialogTheme" parent="ThemeOverlay.MaterialComponents.Dialog.Alert">
+            <!-- Dialog background -->
+            <item name="android:background">@color/black</item>
+        <!-- Title and message colors (AppCompat text colors) -->
+        <item name="android:textColorPrimary">@android:color/white</item>
+        <item name="android:textColorSecondary">@android:color/white</item>
+
+        <!-- Button styles inside dialogs -->
+        <item name="buttonBarPositiveButtonStyle">@style/MyPositiveButton</item>
+        <item name="buttonBarNegativeButtonStyle">@style/MyNegativeButton</item>
+    </style>
+
+    <!-- Material TextInputLayout for dialog fields -->
+    <style name="MyDialogTextInputLayout" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        <item name="hintTextColor">@color/gray</item>
+        <item name="boxStrokeColor">@color/orange</item>
+        <item name="boxBackgroundColor">@color/dark_gray</item>
+    </style>
+
+    <!-- Material TextInputEditText for dialog fields -->
+    <style name="MyDialogEditText" parent="Widget.MaterialComponents.TextInputEditText.OutlinedBox">
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:padding">16dp</item>
+    </style>
+
+    <!-- Dialog buttons -->
+    <style name="MyPositiveButton" parent="Widget.MaterialComponents.Button.TextButton.Dialog">
+        <item name="android:textColor">@color/orange</item>
+    </style>
+
+    <style name="MyNegativeButton" parent="Widget.MaterialComponents.Button.TextButton.Dialog">
+        <item name="android:textColor">@color/gray</item>
+    </style>
 
 
 </resources>

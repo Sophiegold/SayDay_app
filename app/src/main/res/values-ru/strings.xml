@@ -52,4 +52,60 @@
     <string name="tap_to_choose_a_design_for_your_tape">Нажмите, чтобы выбрать дизайн вашей кассеты</string>
     <string name="all_your_recordings_for_this_day_are_listed_here">Все ваши записи за этот день отображаются здесь</string>
     <string name="add_an_image_for_this_date">Добавьте изображение для этой даты</string>
+    <string name="got_it">Готово</string>
+    <string name="privacy_note">Политика конфиденциальности</string>
+    <string name="open_date_choice_title">Запиши историю сегодня или вернись к прошлой</string>
+    <string name="open_date_choice_msg">Хотите добавить запись за сегодня или просмотреть последнюю сделанную запись?</string>
+    <string name="add_for_today">Добавить за сегодня</string>
+    <string name="review_last">Просмотреть последнюю</string>
+    <string name="lock_settings">Настройки блокировки</string>
+    <string name="password">Пароль</string>
+    <string name="confirm_password">Подтвердите пароль</string>
+    <string name="lock_strong_warning">Этот пароль невозможно восстановить. Если вы забудете его, вы потеряете доступ к защищённым функциям. Вам потребуется ввести его при каждом запуске приложения.</string>
+    <!-- Lock UI - Russian -->
+    <string name="set_password">Установить пароль</string>
+    <string name="password_cannot_be_empty">Пароль не может быть пустым.</string>
+    <string name="passwords_do_not_match">Пароли не совпадают.</string>
+
+    <!-- Strong warning shown when user sets a password -->
+
+    <string name="lock_enabled_success">Блокировка включена. Запомните пароль — его нельзя восстановить.</string>
+    <string name="failed_to_enable_lock">Не удалось включить блокировку.</string>
+
+    <!-- Unlock UI -->
+    <string name="unlock">Разблокировать</string>
+    <string name="enter_password_to_unlock">Введите пароль, чтобы разблокировать приложение.</string>
+    <string name="unlocked">Разблокировано</string>
+    <string name="incorrect_password">Неверный пароль.</string>
+    <string name="exit">Выход</string>
+
+    <!-- Nudge / suggestion -->
+    <string name="lock_suggestion_title">Защитите приложение</string>
+    <string name="lock_suggestion_msg">Вы можете защитить записи паролем. Хотите включить блокировку сейчас?</string>
+    <string name="enable_lock">Включить блокировку</string>
+    <string name="remind_me_later">Напомнить позже</string>
+    <string name="dont_show_again">Больше не показывать</string>
+
+    <!-- Change / disable flows -->
+    <string name="lock_disabled_success">Блокировка отключена.</string>
+    <string name="verify_current_password">Подтвердите текущий пароль</string>
+    <string name="verify">Подтвердить</string>
+    <string name="disable">Отключить</string>
+    <string name="disable_lock">Отключить блокировку</string>
+    <string name="change_password">Сменить пароль</string>
+    <string name="lock_on">Блокировка: ВКЛ</string>
+    <string name="lock_off">Блокировка: ВЫКЛ</string>
+    <string name="confirm_disable_lock">Отключить блокировку? Это удалит сохранённый пароль.</string>
+    <string name="disable_lock_success">Блокировка отключена</string>
+    <string name="failed_to_save_image" />
+    <string name="lock_status" />
+    <string name="enter_password_to_disable_lock" />
+    <string name="enter_password_to_lockoff" />
+    <string name="close_app">Закрыть приложение</string>
+    <string name="exit_confirm_message">Вы уверены, что хотите закрыть приложение?</string>
+    <string name="delete_all">Удалить всё</string>
+    <string name="delete_all_recordings">Удалить все записи</string>
+    <string name="delete_all_confirmation_message">Вы уверены, что хотите удалить все записи за эту дату? Это действие нельзя отменить.</string>
+    <string name="all_recordings_deleted">Все записи были удалены.</string>
+    <string name="no_recordings_to_delete">Нет записей для удаления.</string>
 </resources>
